@@ -1,108 +1,178 @@
 <?php
 require_once 'config.php';
 
-// --- SUMMARY STATS ---
-$summary_sql = "
-    SELECT 
-        COUNT(*) AS total_records,
-        SUM(d.X_GUARDS) AS total_guards,
-        SUM(d.X_GROSS_VALUE) AS total_gross,
-        SUM(d.X_NET_RECEIVABLE) AS total_net,
-        AVG(d.X_MONTHLY_RATE) AS avg_monthly_rate,
-        COUNT(DISTINCT d.MASTER_ID) AS unique_masters,
-        COUNT(DISTINCT d.X_CODE) AS unique_services,
-        COUNT(DISTINCT m.X_CUSTOMER) AS unique_clients
-    FROM detail_rr d
-    LEFT JOIN master_rr m ON d.MASTER_ID = m.MASTER_ID
-";
-$summary = $conn->query($summary_sql)->fetch_assoc() ?? [];
+// Initialize filter variables
+$start_date = $_GET['start_date'] ?? '';
+$end_date = $_GET['end_date'] ?? '';
+$selected_month = $_GET['month'] ?? '';
 
-// --- SERVICE TYPE BREAKDOWN ---
-$service_sql = "
-    SELECT 
-        d.X_CODE, 
-        d.X_REVENUE_CODE_DESCRIPTION,
-        SUM(d.X_GUARDS) AS total_guards,
-        SUM(d.X_GROSS_VALUE) AS total_value,
-        SUM(d.X_NET_RECEIVABLE) AS total_net
-    FROM detail_rr d
-    GROUP BY d.X_CODE, d.X_REVENUE_CODE_DESCRIPTION
-    ORDER BY total_value DESC
-";
-$service_result = $conn->query($service_sql);
+// Function to build WHERE clause and parameters
+function buildWhereClause($start_date, $end_date, $selected_month)
+{
+    $where_conditions = ["m.ADD_DATE IS NOT NULL AND m.ADD_DATE != '0000-00-00'"];
+    $params = [];
+    $types = '';
 
-// --- PIE CHART DATA ---
-$pie_chart_data = [];
-$pie_chart_labels = [];
-$pie_chart_values = [];
-$pie_chart_colors = [];
-
-if ($service_result && $service_result->num_rows) {
-    $color_palette = [
-        '#FF6384',
-        '#36A2EB',
-        '#FFCE56',
-        '#4BC0C0',
-        '#9966FF',
-        '#FF9F40',
-        '#FF6384',
-        '#C9CBCF',
-        '#4BC0C0',
-        '#FFCD56'
-    ];
-
-    $counter = 0;
-    $service_result->data_seek(0); // Reset pointer
-    while ($service = $service_result->fetch_assoc()) {
-        $pie_chart_labels[] = htmlspecialchars($service['X_REVENUE_CODE_DESCRIPTION']);
-        $pie_chart_values[] = (float)$service['total_value'];
-        $pie_chart_colors[] = $color_palette[$counter % count($color_palette)];
-        $counter++;
+    // Add filter conditions
+    if (!empty($start_date) && !empty($end_date)) {
+        $where_conditions[] = "m.ADD_DATE BETWEEN ? AND ?";
+        array_push($params, $start_date, $end_date);
+        $types .= 'ss';
+    } elseif (!empty($start_date)) {
+        $where_conditions[] = "m.ADD_DATE >= ?";
+        $params[] = $start_date;
+        $types .= 's';
+    } elseif (!empty($end_date)) {
+        $where_conditions[] = "m.ADD_DATE <= ?";
+        $params[] = $end_date;
+        $types .= 's';
     }
+
+    if (!empty($selected_month)) {
+        $where_conditions[] = "DATE_FORMAT(m.ADD_DATE, '%Y-%m') = ?";
+        $params[] = $selected_month;
+        $types .= 's';
+    }
+
+    return [
+        'where_clause' => "WHERE " . implode(" AND ", $where_conditions),
+        'params' => $params,
+        'types' => $types
+    ];
 }
 
-// --- RECENT TRANSACTIONS ---
-$recent_sql = "
-    SELECT 
-        d.DETAIL_ID, d.MASTER_ID, 
-        d.X_CODE, d.X_REVENUE_CODE_DESCRIPTION,
-        d.X_GUARDS, d.X_GROSS_VALUE, d.X_NET_RECEIVABLE, 
-        d.X_DATE,
-        m.X_CUSTOMER, m.X_NAME, m.LOCATION_NAME, m.X_REVENUE_AUTHORITY
-    FROM detail_rr d
-    LEFT JOIN master_rr m ON d.MASTER_ID = m.MASTER_ID
-    ORDER BY d.X_DATE DESC 
-    LIMIT 10
-";
-$recent_result = $conn->query($recent_sql);
+// Function to execute prepared statement with error handling
+function executeQuery($conn, $sql, $types = '', $params = [])
+{
+    $stmt = $conn->prepare($sql);
+    if ($stmt === false) {
+        error_log("SQL Error: " . $conn->error . " | Query: " . $sql);
+        die("Database error occurred. Please try again.");
+    }
 
-// --- MONTHLY REVENUE TREND ---
-$monthly_sql = "
-    SELECT 
-        DATE_FORMAT(m.X_DATE, '%Y-%m') AS month,
-        SUM(d.X_GROSS_VALUE) AS monthly_revenue,
-        SUM(d.X_NET_RECEIVABLE) AS monthly_net
-    FROM detail_rr d
-    LEFT JOIN master_rr m ON d.MASTER_ID = m.MASTER_ID
-    WHERE m.X_DATE IS NOT NULL 
-      AND m.X_DATE != '0000-00-00'
-    GROUP BY YEAR(m.X_DATE), MONTH(m.X_DATE)
-    ORDER BY YEAR(m.X_DATE) DESC, MONTH(m.X_DATE) DESC
-    LIMIT 12
-";
-$monthly_result = $conn->query($monthly_sql);
-$monthly_data = $monthly_result && $monthly_result->num_rows > 0
-    ? array_reverse($monthly_result->fetch_all(MYSQLI_ASSOC))
-    : [];
+    if (!empty($params)) {
+        $stmt->bind_param($types, ...$params);
+    }
 
+    if (!$stmt->execute()) {
+        error_log("Execution Error: " . $stmt->error);
+        die("Query execution failed.");
+    }
+
+    return $stmt;
+}
+
+// Build WHERE clause once
+$filter_data = buildWhereClause($start_date, $end_date, $selected_month);
+$where_clause = $filter_data['where_clause'];
+$params = $filter_data['params'];
+$types = $filter_data['types'];
+
+// Execute all main queries
+$queries = [
+    'summary' => "
+        SELECT 
+            COUNT(*) AS total_records,
+            SUM(d.X_GUARDS) AS total_guards,
+            SUM(d.X_GROSS_VALUE) AS total_gross,
+            SUM(d.X_NET_RECEIVABLE) AS total_net,
+            AVG(d.X_MONTHLY_RATE) AS avg_monthly_rate,
+            COUNT(DISTINCT d.MASTER_ID) AS unique_masters,
+            COUNT(DISTINCT d.X_CODE) AS unique_services,
+            COUNT(DISTINCT m.X_CUSTOMER) AS unique_clients
+        FROM detail_rr d
+        LEFT JOIN master_rr m ON d.MASTER_ID = m.MASTER_ID
+        $where_clause
+    ",
+
+    'service' => "
+        SELECT 
+            d.X_CODE, 
+            d.X_REVENUE_CODE_DESCRIPTION,
+            SUM(d.X_GUARDS) AS total_guards,
+            SUM(d.X_GROSS_VALUE) AS total_value,
+            SUM(d.X_NET_RECEIVABLE) AS total_net
+        FROM detail_rr d
+        LEFT JOIN master_rr m ON d.MASTER_ID = m.MASTER_ID
+        $where_clause
+        GROUP BY d.X_CODE, d.X_REVENUE_CODE_DESCRIPTION
+        ORDER BY total_value DESC
+    ",
+
+    'recent' => "
+        SELECT 
+            d.DETAIL_ID, d.MASTER_ID, 
+            d.X_CODE, d.X_REVENUE_CODE_DESCRIPTION,
+            d.X_GUARDS, d.X_GROSS_VALUE, d.X_NET_RECEIVABLE, 
+            d.ADD_DATE,
+            m.X_CUSTOMER, m.X_NAME, m.LOCATION_NAME, m.X_REVENUE_AUTHORITY
+        FROM detail_rr d
+        LEFT JOIN master_rr m ON d.MASTER_ID = m.MASTER_ID
+        $where_clause
+        ORDER BY d.ADD_DATE DESC 
+        LIMIT 10
+    ",
+
+    'monthly' => "
+        SELECT 
+            DATE_FORMAT(m.ADD_DATE, '%Y-%m') AS month,
+            SUM(d.X_GROSS_VALUE) AS monthly_revenue,
+            SUM(d.X_NET_RECEIVABLE) AS monthly_net
+        FROM detail_rr d
+        LEFT JOIN master_rr m ON d.MASTER_ID = m.MASTER_ID
+        $where_clause
+        GROUP BY YEAR(m.ADD_DATE), MONTH(m.ADD_DATE)
+        ORDER BY YEAR(m.ADD_DATE) DESC, MONTH(m.ADD_DATE) DESC
+        LIMIT 12
+    "
+];
+
+// Execute queries and store results
+$results = [];
+foreach ($queries as $key => $sql) {
+    $stmt = executeQuery($conn, $sql, $types, $params);
+    $results[$key] = $stmt->get_result();
+    $stmt->close();
+}
+
+// Extract results
+$summary = $results['summary']->fetch_assoc() ?? [];
+$service_result = $results['service'];
+$recent_result = $results['recent'];
+$monthly_result = $results['monthly'];
+
+// Process monthly data
+$monthly_data = $monthly_result->num_rows > 0 ? array_reverse($monthly_result->fetch_all(MYSQLI_ASSOC)) : [];
 $months = $gross_values = $net_values = [];
 foreach ($monthly_data as $row) {
     $months[] = date('M Y', strtotime($row['month'] . '-01'));
     $gross_values[] = (float)$row['monthly_revenue'];
     $net_values[] = (float)$row['monthly_net'];
 }
-?>
 
+// Process pie chart data
+$pie_chart_labels = $pie_chart_values = $pie_chart_colors = [];
+$color_palette = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8AC926', '#1982C4', '#6A4C93', '#FF595E'];
+
+if ($service_result->num_rows) {
+    $service_result->data_seek(0);
+    $counter = 0;
+    while ($service = $service_result->fetch_assoc()) {
+        $pie_chart_labels[] = htmlspecialchars($service['X_REVENUE_CODE_DESCRIPTION']);
+        $pie_chart_values[] = (float)$service['total_value'];
+        $pie_chart_colors[] = $color_palette[$counter++ % count($color_palette)];
+    }
+    $service_result->data_seek(0);
+}
+
+// Get available months for filter dropdown (cached if possible)
+$available_months_result = $conn->query("
+    SELECT DISTINCT DATE_FORMAT(ADD_DATE, '%Y-%m') as month 
+    FROM master_rr 
+    WHERE ADD_DATE IS NOT NULL AND ADD_DATE != '0000-00-00'
+    ORDER BY month DESC
+");
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -159,15 +229,81 @@ foreach ($monthly_data as $row) {
             height: 300px;
             width: 100%;
         }
+
+        .filter-section {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .active-filters {
+            background: #e7f3ff;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
     </style>
 </head>
 
 <body>
-
     <div class="container py-4">
         <div class="dashboard-header text-center">
             <h1 class="fw-bold mb-2"><i class="fas fa-shield-alt me-2"></i>Security Guarding Dashboard</h1>
             <p class="text-light mb-0">Comprehensive Overview of Guarding Services and Revenue</p>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <h5 class="fw-bold mb-3"><i class="fas fa-filter me-2 text-primary"></i>Filter Data</h5>
+            <form method="GET" action="" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Start Date</label>
+                    <input type="date" class="form-control" name="start_date" value="<?= htmlspecialchars($start_date) ?>">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">End Date</label>
+                    <input type="date" class="form-control" name="end_date" value="<?= htmlspecialchars($end_date) ?>">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Month</label>
+                    <select class="form-select" name="month">
+                        <option value="">All Months</option>
+                        <?php if ($available_months_result):
+                            while ($month_row = $available_months_result->fetch_assoc()): ?>
+                                <option value="<?= $month_row['month'] ?>"
+                                    <?= $selected_month == $month_row['month'] ? 'selected' : '' ?>>
+                                    <?= date('F Y', strtotime($month_row['month'] . '-01')) ?>
+                                </option>
+                        <?php endwhile;
+                        endif; ?>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100 me-2">
+                        <i class="fas fa-search me-1"></i> Apply Filters
+                    </button>
+                    <a href="?" class="btn btn-outline-secondary"><i class="fas fa-redo"></i></a>
+                </div>
+            </form>
+
+            <?php if (!empty($start_date) || !empty($end_date) || !empty($selected_month)): ?>
+                <div class="active-filters mt-3">
+                    <h6 class="fw-bold mb-2">Active Filters:</h6>
+                    <div class="d-flex flex-wrap gap-2">
+                        <?php if (!empty($start_date)): ?>
+                            <span class="badge bg-primary">From: <?= htmlspecialchars($start_date) ?></span>
+                        <?php endif; ?>
+                        <?php if (!empty($end_date)): ?>
+                            <span class="badge bg-primary">To: <?= htmlspecialchars($end_date) ?></span>
+                        <?php endif; ?>
+                        <?php if (!empty($selected_month)): ?>
+                            <span class="badge bg-success">Month: <?= date('F Y', strtotime($selected_month . '-01')) ?></span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
 
         <!-- Summary Cards -->
@@ -198,24 +334,18 @@ foreach ($monthly_data as $row) {
                 <div class="card shadow-sm">
                     <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
                         <span><i class="fas fa-cubes me-2 text-warning"></i>Service Breakdown</span>
-                        <span class="badge bg-primary"><?= $service_result ? $service_result->num_rows : 0 ?> Services</span>
+                        <span class="badge bg-primary"><?= $service_result->num_rows ?> Services</span>
                     </div>
                     <div class="card-body">
                         <div class="row g-3">
-                            <?php if ($service_result && $service_result->num_rows):
-                                $service_result->data_seek(0); // Reset pointer
+                            <?php if ($service_result->num_rows):
+                                $service_result->data_seek(0);
                                 while ($srv = $service_result->fetch_assoc()): ?>
                                     <div class="col-md-4 col-lg-3">
                                         <div class="card service-card shadow-sm h-100">
                                             <div class="card-body">
-                                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                                    <h6 class="card-title fw-bold text-dark mb-0">
-                                                        <?= htmlspecialchars($srv['X_REVENUE_CODE_DESCRIPTION']) ?>
-                                                    </h6>
-                                                </div>
-                                                <p class="text-muted small mb-2">
-                                                    Code: <?= htmlspecialchars($srv['X_CODE']) ?>
-                                                </p>
+                                                <h6 class="card-title fw-bold text-dark mb-2"><?= htmlspecialchars($srv['X_REVENUE_CODE_DESCRIPTION']) ?></h6>
+                                                <p class="text-muted small mb-2">Code: <?= htmlspecialchars($srv['X_CODE']) ?></p>
                                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                                     <span class="text-muted small">Guards:</span>
                                                     <span class="fw-bold text-primary"><?= (int)$srv['total_guards'] ?></span>
@@ -235,7 +365,7 @@ foreach ($monthly_data as $row) {
                             else: ?>
                                 <div class="col-12 text-center py-4">
                                     <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                                    <p class="text-muted">No service data available</p>
+                                    <p class="text-muted">No service data available for selected filters</p>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -246,7 +376,6 @@ foreach ($monthly_data as $row) {
 
         <!-- Charts and Tables -->
         <div class="row g-4">
-            <!-- Left Column -->
             <div class="col-lg-8">
                 <!-- Pie Chart -->
                 <div class="card shadow-sm mb-4">
@@ -275,23 +404,19 @@ foreach ($monthly_data as $row) {
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php if ($recent_result && $recent_result->num_rows):
+                                <?php if ($recent_result->num_rows):
                                     while ($r = $recent_result->fetch_assoc()): ?>
                                         <tr>
-                                            <td><strong><?= htmlspecialchars($r['X_NAME']) ?></strong><br>
-                                                <small class="text-muted"><?= htmlspecialchars($r['LOCATION_NAME']) ?></small>
-                                            </td>
-                                            <td><?= htmlspecialchars($r['X_REVENUE_CODE_DESCRIPTION']) ?><br>
-                                                <small class="text-muted"><?= htmlspecialchars($r['X_CODE']) ?></small>
-                                            </td>
+                                            <td><strong><?= htmlspecialchars($r['X_NAME']) ?></strong><br><small class="text-muted"><?= htmlspecialchars($r['LOCATION_NAME']) ?></small></td>
+                                            <td><?= htmlspecialchars($r['X_REVENUE_CODE_DESCRIPTION']) ?><br><small class="text-muted"><?= htmlspecialchars($r['X_CODE']) ?></small></td>
                                             <td><?= (int)$r['X_GUARDS'] ?></td>
                                             <td class="text-end fw-semibold text-success"><?= number_format($r['X_NET_RECEIVABLE'], 2) ?></td>
-                                            <td><?= date('d M Y', strtotime($r['X_DATE'])) ?></td>
+                                            <td><?= date('d M Y', strtotime($r['ADD_DATE'])) ?></td>
                                         </tr>
                                     <?php endwhile;
                                 else: ?>
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted">No recent data available</td>
+                                        <td colspan="5" class="text-center text-muted">No recent data available for selected filters</td>
                                     </tr>
                                 <?php endif; ?>
                             </tbody>
@@ -300,7 +425,6 @@ foreach ($monthly_data as $row) {
                 </div>
             </div>
 
-            <!-- Right Column -->
             <div class="col-lg-4">
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-white fw-bold"><i class="fas fa-chart-line me-2 text-success"></i>Quick Stats</div>
@@ -330,8 +454,8 @@ foreach ($monthly_data as $row) {
                 <div class="card shadow-sm">
                     <div class="card-header bg-white fw-bold"><i class="fas fa-list me-2 text-info"></i>Service Summary</div>
                     <div class="list-group list-group-flush">
-                        <?php if ($service_result && $service_result->num_rows):
-                            $service_result->data_seek(0); // Reset pointer
+                        <?php if ($service_result->num_rows):
+                            $service_result->data_seek(0);
                             while ($srv = $service_result->fetch_assoc()): ?>
                                 <div class="list-group-item d-flex justify-content-between align-items-center">
                                     <div>
@@ -345,7 +469,7 @@ foreach ($monthly_data as $row) {
                                 </div>
                             <?php endwhile;
                         else: ?>
-                            <div class="p-3 text-muted text-center">No service data</div>
+                            <div class="p-3 text-muted text-center">No service data for selected filters</div>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -355,50 +479,49 @@ foreach ($monthly_data as $row) {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Pie Chart for Service Distribution
-        const pieCtx = document.getElementById('servicePieChart').getContext('2d');
-        const servicePieChart = new Chart(pieCtx, {
-            type: 'pie',
-            data: {
-                labels: <?= json_encode($pie_chart_labels) ?>,
-                datasets: [{
-                    data: <?= json_encode($pie_chart_values) ?>,
-                    backgroundColor: <?= json_encode($pie_chart_colors) ?>,
-                    borderWidth: 2,
-                    borderColor: '#ffffff'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            padding: 20,
-                            usePointStyle: true,
-                            font: {
-                                size: 11
+        <?php if (!empty($pie_chart_values)): ?>
+            new Chart(document.getElementById('servicePieChart').getContext('2d'), {
+                type: 'pie',
+                data: {
+                    labels: <?= json_encode($pie_chart_labels) ?>,
+                    datasets: [{
+                        data: <?= json_encode($pie_chart_values) ?>,
+                        backgroundColor: <?= json_encode($pie_chart_colors) ?>,
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true,
+                                font: {
+                                    size: 11
+                                }
                             }
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.parsed;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = Math.round((value / total) * 100);
-                                return `${label}: ${value.toLocaleString()} (${percentage}%)`;
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${value.toLocaleString()} (${percentage}%)`;
+                                }
                             }
                         }
                     }
                 }
-            }
-        });
+            });
+        <?php endif; ?>
     </script>
 </body>
 
 </html>
-
 <?php $conn->close(); ?>
