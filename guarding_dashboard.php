@@ -31,6 +31,36 @@ $service_sql = "
 ";
 $service_result = $conn->query($service_sql);
 
+// --- PIE CHART DATA ---
+$pie_chart_data = [];
+$pie_chart_labels = [];
+$pie_chart_values = [];
+$pie_chart_colors = [];
+
+if ($service_result && $service_result->num_rows) {
+    $color_palette = [
+        '#FF6384',
+        '#36A2EB',
+        '#FFCE56',
+        '#4BC0C0',
+        '#9966FF',
+        '#FF9F40',
+        '#FF6384',
+        '#C9CBCF',
+        '#4BC0C0',
+        '#FFCD56'
+    ];
+
+    $counter = 0;
+    $service_result->data_seek(0); // Reset pointer
+    while ($service = $service_result->fetch_assoc()) {
+        $pie_chart_labels[] = htmlspecialchars($service['X_REVENUE_CODE_DESCRIPTION']);
+        $pie_chart_values[] = (float)$service['total_value'];
+        $pie_chart_colors[] = $color_palette[$counter % count($color_palette)];
+        $counter++;
+    }
+}
+
 // --- RECENT TRANSACTIONS ---
 $recent_sql = "
     SELECT 
@@ -115,6 +145,20 @@ foreach ($monthly_data as $row) {
             margin-bottom: 2rem;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
+
+        .service-card {
+            border-left: 4px solid #0d6efd;
+        }
+
+        .service-card .card-body {
+            padding: 1rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
     </style>
 </head>
 
@@ -148,12 +192,75 @@ foreach ($monthly_data as $row) {
             <?php endforeach; ?>
         </div>
 
+        <!-- Service Breakdown Cards -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-cubes me-2 text-warning"></i>Service Breakdown</span>
+                        <span class="badge bg-primary"><?= $service_result ? $service_result->num_rows : 0 ?> Services</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <?php if ($service_result && $service_result->num_rows):
+                                $service_result->data_seek(0); // Reset pointer
+                                while ($srv = $service_result->fetch_assoc()): ?>
+                                    <div class="col-md-4 col-lg-3">
+                                        <div class="card service-card shadow-sm h-100">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <h6 class="card-title fw-bold text-dark mb-0">
+                                                        <?= htmlspecialchars($srv['X_REVENUE_CODE_DESCRIPTION']) ?>
+                                                    </h6>
+                                                </div>
+                                                <p class="text-muted small mb-2">
+                                                    Code: <?= htmlspecialchars($srv['X_CODE']) ?>
+                                                </p>
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <span class="text-muted small">Guards:</span>
+                                                    <span class="fw-bold text-primary"><?= (int)$srv['total_guards'] ?></span>
+                                                </div>
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <span class="text-muted small">Gross Value:</span>
+                                                    <span class="fw-bold text-success"><?= number_format($srv['total_value'], 2) ?></span>
+                                                </div>
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <span class="text-muted small">Net Receivable:</span>
+                                                    <span class="fw-bold text-info"><?= number_format($srv['total_net'], 2) ?></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endwhile;
+                            else: ?>
+                                <div class="col-12 text-center py-4">
+                                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">No service data available</p>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Charts and Tables -->
         <div class="row g-4">
             <!-- Left Column -->
             <div class="col-lg-8">
+                <!-- Pie Chart -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white fw-bold">
+                        <i class="fas fa-chart-pie me-2 text-primary"></i>Service Revenue Distribution
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="servicePieChart"></canvas>
+                        </div>
+                    </div>
+                </div>
 
-
+                <!-- Recent Transactions -->
                 <div class="card shadow-sm">
                     <div class="card-header bg-white fw-bold"><i class="fas fa-history me-2 text-secondary"></i>Recent Transactions</div>
                     <div class="table-responsive">
@@ -196,17 +303,43 @@ foreach ($monthly_data as $row) {
             <!-- Right Column -->
             <div class="col-lg-4">
                 <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-white fw-bold"><i class="fas fa-cubes me-2 text-warning"></i>Service Breakdown</div>
+                    <div class="card-header bg-white fw-bold"><i class="fas fa-chart-line me-2 text-success"></i>Quick Stats</div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6 mb-3">
+                                <div class="fs-3 fw-bold text-success"><?= number_format($summary['unique_services'] ?? 0) ?></div>
+                                <div class="small text-muted">Service Types</div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="fs-3 fw-bold text-primary"><?= number_format($summary['avg_monthly_rate'] ?? 0, 2) ?></div>
+                                <div class="small text-muted">Avg Monthly Rate</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="fs-3 fw-bold text-info"><?= number_format($summary['unique_masters'] ?? 0) ?></div>
+                                <div class="small text-muted">Master Records</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="fs-3 fw-bold text-warning"><?= number_format($summary['total_records'] ?? 0) ?></div>
+                                <div class="small text-muted">Total Records</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service Summary -->
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white fw-bold"><i class="fas fa-list me-2 text-info"></i>Service Summary</div>
                     <div class="list-group list-group-flush">
                         <?php if ($service_result && $service_result->num_rows):
+                            $service_result->data_seek(0); // Reset pointer
                             while ($srv = $service_result->fetch_assoc()): ?>
                                 <div class="list-group-item d-flex justify-content-between align-items-center">
                                     <div>
-                                        <div class="fw-semibold"><?= htmlspecialchars($srv['X_REVENUE_CODE_DESCRIPTION']) ?></div>
+                                        <div class="fw-semibold small"><?= htmlspecialchars($srv['X_REVENUE_CODE_DESCRIPTION']) ?></div>
                                         <small class="text-muted"><?= htmlspecialchars($srv['X_CODE']) ?></small>
                                     </div>
                                     <div class="text-end">
-                                        <div class="fw-bold text-success"><?= number_format($srv['total_value'], 2) ?></div>
+                                        <div class="fw-bold text-success small"><?= number_format($srv['total_value'], 2) ?></div>
                                         <small class="text-muted"><?= (int)$srv['total_guards'] ?> guards</small>
                                     </div>
                                 </div>
@@ -216,25 +349,54 @@ foreach ($monthly_data as $row) {
                         <?php endif; ?>
                     </div>
                 </div>
-
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white fw-bold"><i class="fas fa-chart-pie me-2 text-primary"></i>Quick Stats</div>
-                    <div class="card-body d-flex justify-content-around">
-                        <div class="text-center">
-                            <div class="fs-3 fw-bold text-success"><?= number_format($summary['unique_services'] ?? 0) ?></div>
-                            <div class="small text-muted">Service Types</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="fs-3 fw-bold text-primary"><?= number_format($summary['avg_monthly_rate'] ?? 0, 2) ?></div>
-                            <div class="small text-muted">Avg Monthly Rate</div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Pie Chart for Service Distribution
+        const pieCtx = document.getElementById('servicePieChart').getContext('2d');
+        const servicePieChart = new Chart(pieCtx, {
+            type: 'pie',
+            data: {
+                labels: <?= json_encode($pie_chart_labels) ?>,
+                datasets: [{
+                    data: <?= json_encode($pie_chart_values) ?>,
+                    backgroundColor: <?= json_encode($pie_chart_colors) ?>,
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            font: {
+                                size: 11
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value.toLocaleString()} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
 </body>
 
 </html>
