@@ -99,18 +99,19 @@ $queries = [
         ORDER BY total_value DESC
     ",
 
-    'recent' => "
+    'top_clients' => "
         SELECT 
-            d.DETAIL_ID, d.MASTER_ID, 
-            d.X_CODE, d.X_REVENUE_CODE_DESCRIPTION,
-            d.X_GUARDS, d.X_GROSS_VALUE, d.X_NET_RECEIVABLE, 
-            d.ADD_DATE,
-            m.X_CUSTOMER, m.X_NAME, m.LOCATION_NAME, m.X_REVENUE_AUTHORITY
+            m.X_CUSTOMER,
+            m.X_NAME,
+            SUM(d.X_GROSS_VALUE) AS total_revenue,
+            SUM(d.X_NET_RECEIVABLE) AS total_net,
+            SUM(d.X_GUARDS) AS total_guards
         FROM detail_rr d
         LEFT JOIN master_rr m ON d.MASTER_ID = m.MASTER_ID
         $where_clause
-        ORDER BY d.ADD_DATE DESC 
-        LIMIT 10
+        GROUP BY m.X_CUSTOMER, m.X_NAME
+        ORDER BY total_revenue DESC
+        LIMIT 5
     ",
 
     'monthly' => "
@@ -138,7 +139,7 @@ foreach ($queries as $key => $sql) {
 // Extract results
 $summary = $results['summary']->fetch_assoc() ?? [];
 $service_result = $results['service'];
-$recent_result = $results['recent'];
+$top_clients_result = $results['top_clients'];
 $monthly_result = $results['monthly'];
 
 // Process monthly data
@@ -165,7 +166,22 @@ if ($service_result->num_rows) {
     $service_result->data_seek(0);
 }
 
-// Get available months for filter dropdown (cached if possible)
+// Process top clients data for bar chart
+$client_labels = $client_revenues = $client_nets = $client_colors = [];
+$bar_color_palette = ['#4BC0C0', '#36A2EB', '#FFCE56', '#FF6384', '#9966FF'];
+
+if ($top_clients_result->num_rows) {
+    $top_clients_result->data_seek(0);
+    $counter = 0;
+    while ($client = $top_clients_result->fetch_assoc()) {
+        $client_labels[] = htmlspecialchars($client['X_NAME'] ?: $client['X_CUSTOMER']);
+        $client_revenues[] = (float)$client['total_revenue'];
+        $client_nets[] = (float)$client['total_net'];
+        $client_colors[] = $bar_color_palette[$counter++ % count($bar_color_palette)];
+    }
+}
+
+// Get available months for filter dropdown
 $available_months_result = $conn->query("
     SELECT DISTINCT DATE_FORMAT(ADD_DATE, '%Y-%m') as month 
     FROM master_rr 
@@ -374,10 +390,10 @@ $available_months_result = $conn->query("
             </div>
         </div>
 
-        <!-- Charts and Tables -->
+        <!-- Charts Section -->
         <div class="row g-4">
-            <div class="col-lg-8">
-                <!-- Pie Chart -->
+            <!-- Left Column - Pie Chart -->
+            <div class="col-lg-6">
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-white fw-bold">
                         <i class="fas fa-chart-pie me-2 text-primary"></i>Service Revenue Distribution
@@ -388,46 +404,24 @@ $available_months_result = $conn->query("
                         </div>
                     </div>
                 </div>
-
-                <!-- Recent Transactions -->
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white fw-bold"><i class="fas fa-history me-2 text-secondary"></i>Recent Transactions</div>
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0 align-middle">
-                            <thead>
-                                <tr>
-                                    <th>Client</th>
-                                    <th>Service</th>
-                                    <th>Guards</th>
-                                    <th class="text-end">Net</th>
-                                    <th>Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php if ($recent_result->num_rows):
-                                    while ($r = $recent_result->fetch_assoc()): ?>
-                                        <tr>
-                                            <td><strong><?= htmlspecialchars($r['X_NAME']) ?></strong><br><small class="text-muted"><?= htmlspecialchars($r['LOCATION_NAME']) ?></small></td>
-                                            <td><?= htmlspecialchars($r['X_REVENUE_CODE_DESCRIPTION']) ?><br><small class="text-muted"><?= htmlspecialchars($r['X_CODE']) ?></small></td>
-                                            <td><?= (int)$r['X_GUARDS'] ?></td>
-                                            <td class="text-end fw-semibold text-success"><?= number_format($r['X_NET_RECEIVABLE'], 2) ?></td>
-                                            <td><?= date('d M Y', strtotime($r['ADD_DATE'])) ?></td>
-                                        </tr>
-                                    <?php endwhile;
-                                else: ?>
-                                    <tr>
-                                        <td colspan="5" class="text-center text-muted">No recent data available for selected filters</td>
-                                    </tr>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
             </div>
 
-            <div class="col-lg-4">
+            <!-- Right Column - Top Clients Bar Chart -->
+            <div class="col-lg-6">
                 <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-white fw-bold"><i class="fas fa-chart-line me-2 text-success"></i>Quick Stats</div>
+                    <div class="card-header bg-white fw-bold">
+                        <i class="fas fa-chart-bar me-2 text-success"></i>Top 5 Clients by Revenue
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="clientsBarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white fw-bold"><i class="fas fa-chart-line me-2 text-info"></i>Quick Stats</div>
                     <div class="card-body">
                         <div class="row text-center">
                             <div class="col-6 mb-3">
@@ -449,30 +443,6 @@ $available_months_result = $conn->query("
                         </div>
                     </div>
                 </div>
-
-                <!-- Service Summary -->
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white fw-bold"><i class="fas fa-list me-2 text-info"></i>Service Summary</div>
-                    <div class="list-group list-group-flush">
-                        <?php if ($service_result->num_rows):
-                            $service_result->data_seek(0);
-                            while ($srv = $service_result->fetch_assoc()): ?>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="fw-semibold small"><?= htmlspecialchars($srv['X_REVENUE_CODE_DESCRIPTION']) ?></div>
-                                        <small class="text-muted"><?= htmlspecialchars($srv['X_CODE']) ?></small>
-                                    </div>
-                                    <div class="text-end">
-                                        <div class="fw-bold text-success small"><?= number_format($srv['total_value'], 2) ?></div>
-                                        <small class="text-muted"><?= (int)$srv['total_guards'] ?> guards</small>
-                                    </div>
-                                </div>
-                            <?php endwhile;
-                        else: ?>
-                            <div class="p-3 text-muted text-center">No service data for selected filters</div>
-                        <?php endif; ?>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -480,6 +450,7 @@ $available_months_result = $conn->query("
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         <?php if (!empty($pie_chart_values)): ?>
+            // Service Pie Chart
             new Chart(document.getElementById('servicePieChart').getContext('2d'), {
                 type: 'pie',
                 data: {
@@ -513,6 +484,55 @@ $available_months_result = $conn->query("
                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                     const percentage = Math.round((value / total) * 100);
                                     return `${label}: ${value.toLocaleString()} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        <?php endif; ?>
+
+        <?php if (!empty($client_revenues)): ?>
+            // Top Clients Bar Chart
+            new Chart(document.getElementById('clientsBarChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: <?= json_encode($client_labels) ?>,
+                    datasets: [{
+                        label: 'Gross Revenue',
+                        data: <?= json_encode($client_revenues) ?>,
+                        backgroundColor: <?= json_encode($client_colors) ?>,
+                        borderColor: <?= json_encode($client_colors) ?>,
+                        borderWidth: 1
+                    }, {
+                        label: 'Net Receivable',
+                        data: <?= json_encode($client_nets) ?>,
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.parsed.y.toLocaleString()}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString();
                                 }
                             }
                         }
