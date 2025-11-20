@@ -329,12 +329,30 @@ $available_months_result = $conn->query("
     -->
 
             <!-- Right Side (Profile Icon Stays) -->
-            <div class="flex items-center space-x-4 ml-auto">
-                <div class="w-8 h-8 rounded-full bg-blue-400 overflow-hidden border-2 border-white shadow-md">
-                    <img src="https://placehold.co/32x32/77A9FF/FFFFFF?text=P" alt="Profile" class="w-full h-full object-cover">
+            <div class="relative ml-auto">
+                <!-- Profile Button -->
+                <button id="profileMenuBtn" class="flex items-center focus:outline-none">
+                    <div class="w-8 h-8 rounded-full bg-blue-400 overflow-hidden border-2 border-white shadow-md cursor-pointer">
+                        <img src="https://placehold.co/32x32/77A9FF/FFFFFF?text=P"
+                            alt="Profile"
+                            class="w-full h-full object-cover">
+                    </div>
+                </button>
+
+                <!-- Dropdown Menu -->
+                <div id="profileDropdown"
+                    class="hidden absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-lg border border-gray-200 py-2 z-50">
+                    <a href="profile.php"
+                        class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                        Profile
+                    </a>
+
+                    <a href="logout.php"
+                        class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                        Logout
+                    </a>
                 </div>
             </div>
-
         </header>
 
 
@@ -428,6 +446,21 @@ $available_months_result = $conn->query("
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+
+            const btn = document.getElementById("profileMenuBtn");
+            const menu = document.getElementById("profileDropdown");
+
+            // Toggle dropdown
+            btn.addEventListener("click", () => {
+                menu.classList.toggle("hidden");
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener("click", (e) => {
+                if (!btn.contains(e.target) && !menu.contains(e.target)) {
+                    menu.classList.add("hidden");
+                }
+            });
             // Function to configure and render charts
             function renderCharts() {
                 // --- 1. Bar Chart Data and Configuration ---
