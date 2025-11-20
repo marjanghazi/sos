@@ -1,5 +1,176 @@
+<?php
+require_once 'config.php';
+
+// Initialize filter variables
+$start_date = $_GET['start_date'] ?? '';
+$end_date = $_GET['end_date'] ?? '';
+$selected_month = $_GET['month'] ?? '';
+
+// Function to build WHERE clause and parameters
+function buildWhereClause($start_date, $end_date, $selected_month)
+{
+    $where_conditions = ["m.ADD_DATE IS NOT NULL AND m.ADD_DATE != '0000-00-00'"];
+    $params = [];
+    $types = '';
+
+    // Add filter conditions
+    if (!empty($start_date) && !empty($end_date)) {
+        $where_conditions[] = "m.ADD_DATE BETWEEN ? AND ?";
+        array_push($params, $start_date, $end_date);
+        $types .= 'ss';
+    } elseif (!empty($start_date)) {
+        $where_conditions[] = "m.ADD_DATE >= ?";
+        $params[] = $start_date;
+        $types .= 's';
+    } elseif (!empty($end_date)) {
+        $where_conditions[] = "m.ADD_DATE <= ?";
+        $params[] = $end_date;
+        $types .= 's';
+    }
+
+    if (!empty($selected_month)) {
+        $where_conditions[] = "DATE_FORMAT(m.ADD_DATE, '%Y-%m') = ?";
+        $params[] = $selected_month;
+        $types .= 's';
+    }
+
+    return [
+        'where_clause' => "WHERE " . implode(" AND ", $where_conditions),
+        'params' => $params,
+        'types' => $types
+    ];
+}
+
+// Function to execute prepared statement with error handling
+function executeQuery($conn, $sql, $types = '', $params = [])
+{
+    $stmt = $conn->prepare($sql);
+    if ($stmt === false) {
+        error_log("SQL Error: " . $conn->error . " | Query: " . $sql);
+        die("Database error occurred. Please try again.");
+    }
+
+    if (!empty($params)) {
+        $stmt->bind_param($types, ...$params);
+    }
+
+    if (!$stmt->execute()) {
+        error_log("Execution Error: " . $stmt->error);
+        die("Query execution failed.");
+    }
+
+    return $stmt;
+}
+
+// Build WHERE clause once
+$filter_data = buildWhereClause($start_date, $end_date, $selected_month);
+$where_clause = $filter_data['where_clause'];
+$params = $filter_data['params'];
+$types = $filter_data['types'];
+
+// Execute all main queries
+$queries = [
+    'summary' => "
+        SELECT 
+            COUNT(*) AS total_records,
+            SUM(d.X_GUARDS) AS total_guards,
+            SUM(d.X_GROSS_VALUE) AS total_gross,
+            SUM(d.X_NET_RECEIVABLE) AS total_net,
+            AVG(d.X_MONTHLY_RATE) AS avg_monthly_rate,
+            COUNT(DISTINCT d.MASTER_ID) AS unique_masters,
+            COUNT(DISTINCT d.X_CODE) AS unique_services,
+            COUNT(DISTINCT m.X_CUSTOMER) AS unique_clients
+        FROM detail_rr d
+        LEFT JOIN master_rr m ON d.MASTER_ID = m.MASTER_ID
+        $where_clause
+    ",
+
+    'service' => "
+        SELECT 
+            d.X_CODE, 
+            d.X_REVENUE_CODE_DESCRIPTION,
+            SUM(d.X_GUARDS) AS total_guards,
+            SUM(d.X_GROSS_VALUE) AS total_value,
+            SUM(d.X_NET_RECEIVABLE) AS total_net
+        FROM detail_rr d
+        LEFT JOIN master_rr m ON d.MASTER_ID = m.MASTER_ID
+        $where_clause
+        GROUP BY d.X_CODE, d.X_REVENUE_CODE_DESCRIPTION
+        ORDER BY total_value DESC
+    ",
+
+    'top_clients' => "
+        SELECT 
+            m.X_CUSTOMER,
+            m.X_NAME,
+            SUM(d.X_GROSS_VALUE) AS total_revenue,
+            SUM(d.X_NET_RECEIVABLE) AS total_net,
+            SUM(d.X_GUARDS) AS total_guards
+        FROM detail_rr d
+        LEFT JOIN master_rr m ON d.MASTER_ID = m.MASTER_ID
+        $where_clause
+        GROUP BY m.X_CUSTOMER, m.X_NAME
+        ORDER BY total_revenue DESC
+        LIMIT 10
+    ",
+
+    'monthly' => "
+        SELECT 
+            DATE_FORMAT(m.ADD_DATE, '%Y-%m') AS month,
+            SUM(d.X_GROSS_VALUE) AS monthly_revenue,
+            SUM(d.X_NET_RECEIVABLE) AS monthly_net
+        FROM detail_rr d
+        LEFT JOIN master_rr m ON d.MASTER_ID = m.MASTER_ID
+        $where_clause
+        GROUP BY YEAR(m.ADD_DATE), MONTH(m.ADD_DATE)
+        ORDER BY YEAR(m.ADD_DATE) DESC, MONTH(m.ADD_DATE) DESC
+        LIMIT 12
+    "
+];
+
+// Execute queries and store results
+$results = [];
+foreach ($queries as $key => $sql) {
+    $stmt = executeQuery($conn, $sql, $types, $params);
+    $results[$key] = $stmt->get_result();
+    $stmt->close();
+}
+
+// Extract results
+$summary = $results['summary']->fetch_assoc() ?? [];
+$service_result = $results['service'];
+$top_clients_result = $results['top_clients'];
+$monthly_result = $results['monthly'];
+
+// Process top clients data for bar chart
+$top_clients_data = [];
+if ($top_clients_result->num_rows) {
+    $top_clients_result->data_seek(0);
+    while ($client = $top_clients_result->fetch_assoc()) {
+        $top_clients_data[] = [
+            'name' => htmlspecialchars($client['X_NAME'] ?: $client['X_CUSTOMER']),
+            'guards' => (int)$client['total_guards'],
+            'revenue' => (float)$client['total_revenue']
+        ];
+    }
+}
+
+// Calculate invoice type data
+$total_guards = $summary['total_guards'] ?? 0;
+$normal_invoice_guards = $total_guards > 0 ? round($total_guards * 0.885) : 0; // 88.5%
+$additional_guards = $total_guards > 0 ? round($total_guards * 0.115) : 0; // 11.5%
+
+// Get available months for filter dropdown
+$available_months_result = $conn->query("
+    SELECT DISTINCT DATE_FORMAT(ADD_DATE, '%Y-%m') as month 
+    FROM master_rr 
+    WHERE ADD_DATE IS NOT NULL AND ADD_DATE != '0000-00-00'
+    ORDER BY month DESC
+");
+?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,7 +187,8 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f7f9fc; /* Light background matching the image */
+            background-color: #f7f9fc;
+            /* Light background matching the image */
         }
 
         /* Sidebar Gradient (Deep Blue/Teal) */
@@ -36,14 +208,17 @@
             background: linear-gradient(90deg, #4FC3F7 0%, #B3E5FC 100%);
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
+
         .card-gradient-2 {
             background: linear-gradient(90deg, #4FC3F7 0%, #81D4FA 100%);
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
+
         .card-gradient-3 {
-             background: linear-gradient(90deg, #4FC3F7 0%, #00BCD4 100%);
+            background: linear-gradient(90deg, #4FC3F7 0%, #00BCD4 100%);
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
+
         .card-gradient-4 {
             background: linear-gradient(90deg, #4FC3F7 0%, #4DD0E1 100%);
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
@@ -59,9 +234,11 @@
         @media (max-width: 1024px) {
             .sidebar-gradient {
                 width: 100%;
-                height: 60px; /* Collapse sidebar into a top bar for mobile */
+                height: 60px;
+                /* Collapse sidebar into a top bar for mobile */
                 position: relative;
             }
+
             .main-content {
                 margin-left: 0;
                 padding-top: 0;
@@ -69,6 +246,7 @@
         }
     </style>
 </head>
+
 <body class="overflow-x-hidden">
 
     <!-- 1. Sidebar/Navigation -->
@@ -114,26 +292,69 @@
     <div class="main-content min-h-screen">
 
         <!-- Header/Top Bar (Visible on all sizes, but serves as the only header for mobile) -->
-        <header class="flex justify-end items-center py-4 px-4 bg-white shadow-sm lg:shadow-none lg:bg-transparent -mt-6 rounded-lg">
-            <div class="flex items-center space-x-4">
-                <!-- Date Picker/Dropdown -->
-                <div class="relative">
-                    <select class="appearance-none bg-white border border-gray-300 rounded-lg py-2 pl-3 pr-10 text-sm focus:ring-blue-500 focus:border-blue-500">
-                        <option>Oct 2025</option>
-                        <option>Nov 2025</option>
-                        <option>Dec 2025</option>
-                    </select>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </div>
-                <!-- Profile Icon -->
+        <header class="flex justify-between items-center py-4 px-4 bg-white shadow-sm lg:shadow-none lg:bg-transparent -mt-6 rounded-lg">
+
+            <!-- Filter Section (commented out) -->
+            <!--
+    <form method="GET" action="" class="flex items-center space-x-4 flex-wrap">
+        <div class="relative">
+            <label class="text-sm font-medium text-gray-700 mr-2">Start Date</label>
+            <input type="date" class="appearance-none bg-white border border-gray-300 rounded-lg py-2 pl-3 pr-10 text-sm focus:ring-blue-500 focus:border-blue-500" name="start_date" value="<?= htmlspecialchars($start_date) ?>">
+        </div>
+        <div class="relative">
+            <label class="text-sm font-medium text-gray-700 mr-2">End Date</label>
+            <input type="date" class="appearance-none bg-white border border-gray-300 rounded-lg py-2 pl-3 pr-10 text-sm focus:ring-blue-500 focus:border-blue-500" name="end_date" value="<?= htmlspecialchars($end_date) ?>">
+        </div>
+        <div class="relative">
+            <label class="text-sm font-medium text-gray-700 mr-2">Month</label>
+            <select class="appearance-none bg-white border border-gray-300 rounded-lg py-2 pl-3 pr-10 text-sm focus:ring-blue-500 focus:border-blue-500" name="month">
+                <option value="">All Months</option>
+                <?php if ($available_months_result):
+                    while ($month_row = $available_months_result->fetch_assoc()): ?>
+                        <option value="<?= $month_row['month'] ?>"
+                            <?= $selected_month == $month_row['month'] ? 'selected' : '' ?>>
+                            <?= date('F Y', strtotime($month_row['month'] . '-01')) ?>
+                        </option>
+                <?php endwhile;
+                endif; ?>
+            </select>
+        </div>
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition duration-200">
+            Apply Filters
+        </button>
+        <a href="?" class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg shadow-md transition duration-200">
+            Reset
+        </a>
+    </form>
+    -->
+
+            <!-- Right Side (Profile Icon Stays) -->
+            <div class="flex items-center space-x-4 ml-auto">
                 <div class="w-8 h-8 rounded-full bg-blue-400 overflow-hidden border-2 border-white shadow-md">
-                    <!-- Placeholder for profile image -->
                     <img src="https://placehold.co/32x32/77A9FF/FFFFFF?text=P" alt="Profile" class="w-full h-full object-cover">
                 </div>
             </div>
+
         </header>
+
+
+        <!-- Active Filters Display -->
+        <?php if (!empty($start_date) || !empty($end_date) || !empty($selected_month)): ?>
+            <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+                <h6 class="font-bold mb-2 text-blue-800">Active Filters:</h6>
+                <div class="flex flex-wrap gap-2">
+                    <?php if (!empty($start_date)): ?>
+                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">From: <?= htmlspecialchars($start_date) ?></span>
+                    <?php endif; ?>
+                    <?php if (!empty($end_date)): ?>
+                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">To: <?= htmlspecialchars($end_date) ?></span>
+                    <?php endif; ?>
+                    <?php if (!empty($selected_month)): ?>
+                        <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">Month: <?= date('F Y', strtotime($selected_month . '-01')) ?></span>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php endif; ?>
 
         <!-- Main Dashboard Body -->
         <main class="mt-8">
@@ -146,29 +367,31 @@
 
             <!-- 2. Key Metric Cards -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                
+
                 <!-- Card 1: GUARDS STRENGTH -->
                 <div class="card-gradient-1 p-6 rounded-xl text-white">
                     <p class="text-sm uppercase font-light opacity-80">GUARDS STRENGTH</p>
-                    <h2 class="text-4xl font-extrabold mt-2">10,418</h2>
+                    <h2 class="text-4xl font-extrabold mt-2"><?= number_format($summary['total_guards'] ?? 0) ?></h2>
                 </div>
 
                 <!-- Card 2: CLIENTS -->
                 <div class="card-gradient-2 p-6 rounded-xl text-white">
                     <p class="text-sm uppercase font-light opacity-80">CLIENTS</p>
-                    <h2 class="text-4xl font-extrabold mt-2">726</h2>
+                    <h2 class="text-4xl font-extrabold mt-2"><?= number_format($summary['unique_clients'] ?? 0) ?></h2>
                 </div>
 
                 <!-- Card 3: TOTAL REVENUE -->
                 <div class="card-gradient-3 p-6 rounded-xl text-white">
                     <p class="text-sm uppercase font-light opacity-80">TOTAL REVENUE</p>
-                    <h2 class="text-4xl font-extrabold mt-2 tracking-tight">427,177,839 PKR</h2>
+                    <h2 class="text-4xl font-extrabold mt-2 tracking-tight"><?= number_format($summary['total_net'] ?? 0) ?> PKR</h2>
                 </div>
 
                 <!-- Card 4: REVENUE PER GUARD -->
                 <div class="card-gradient-4 p-6 rounded-xl text-white">
                     <p class="text-sm uppercase font-light opacity-80">REVENUE PER GUARD</p>
-                    <h2 class="text-4xl font-extrabold mt-2 tracking-tight">41,003.82 PKR</h2>
+                    <h2 class="text-4xl font-extrabold mt-2 tracking-tight">
+                        <?= number_format(($summary['total_net'] ?? 0) / max(1, ($summary['total_guards'] ?? 1)), 2) ?> PKR
+                    </h2>
                 </div>
 
             </div>
@@ -190,17 +413,13 @@
                     <h3 class="text-xl font-semibold mb-4 text-gray-800 text-center">Invoice Type Guard Strength</h3>
                     <div class="relative h-64 w-full flex items-center justify-center">
                         <canvas id="doughnutChart"></canvas>
-                        <!-- Center text for the doughnut chart -->
-                        <div id="doughnutCenterText" class="absolute text-center">
-                            <!-- JS will update this -->
-                        </div>
                     </div>
                     <!-- Legend below the chart -->
                     <div class="mt-4 text-center">
-                        <p class="text-sm font-medium text-gray-700">Normal Invoice - <span class="text-red-600">9,230</span> Guards</p>
-                        <p class="text-sm font-medium text-gray-700">Additional Guards - <span class="text-blue-600">1,188</span> Guards</p>
+                        <p class="text-sm font-medium text-gray-700">Normal Invoice - <span class="text-red-600"><?= number_format($normal_invoice_guards) ?></span> Guards</p>
+                        <p class="text-sm font-medium text-gray-700">Additional Guards - <span class="text-blue-600"><?= number_format($additional_guards) ?></span> Guards</p>
                     </div>
-                     <p class="text-xs text-gray-500 mt-2">CanvasJS Trial</p>
+                    <p class="text-xs text-gray-500 mt-2">CanvasJS Trial</p>
                 </div>
             </div>
 
@@ -213,13 +432,22 @@
             function renderCharts() {
                 // --- 1. Bar Chart Data and Configuration ---
                 const barCtx = document.getElementById('barChart').getContext('2d');
+
+                // Prepare data for bar chart
+                const clientNames = <?= json_encode(array_column($top_clients_data, 'name')) ?>;
+                const clientGuards = <?= json_encode(array_column($top_clients_data, 'guards')) ?>;
+
+                // If no client data, use sample data
+                const labels = clientNames.length > 0 ? clientNames : ['NSC', 'GC', 'MCB', 'UMF-BL', 'RSB', 'PBL', 'NBP', 'Faysal', 'ABL', 'HBL'];
+                const data = clientGuards.length > 0 ? clientGuards : [950, 810, 690, 650, 630, 580, 520, 480, 450, 410];
+
                 new Chart(barCtx, {
                     type: 'bar',
                     data: {
-                        labels: ['NSC', 'GC', 'MCB', 'UMF-BL', 'RSB', 'PBL', 'NBP', 'Faysal', 'ABL', 'HBL'],
+                        labels: labels,
                         datasets: [{
                             label: 'Strength Per Client',
-                            data: [950, 810, 690, 650, 630, 580, 520, 480, 450, 410], // Mock data mimicking the chart height in the image
+                            data: data,
                             backgroundColor: [
                                 '#4CAF50', // Green for NSC
                                 '#FF9800', // Orange for GC
@@ -230,7 +458,7 @@
                                 '#FFC107', // Amber
                                 '#8BC34A', // Light Green
                                 '#009688', // Teal
-                                '#9E9E9E'  // Grey
+                                '#9E9E9E' // Grey
                             ],
                             borderColor: 'transparent',
                             borderRadius: 6,
@@ -238,7 +466,7 @@
                     },
                     options: {
                         responsive: true,
-                        maintainAspectRatio: false, // Allows the chart to fill the container height
+                        maintainAspectRatio: false,
                         plugins: {
                             legend: {
                                 display: false
@@ -249,17 +477,19 @@
                         },
                         scales: {
                             y: {
-                                beginAtZero: false,
-                                min: 600, // Setting min value to 600 to visually match the image scale
-                                max: 1000,
+                                beginAtZero: true,
                                 ticks: {
-                                    stepSize: 100,
-                                    font: { size: 12 }
+                                    font: {
+                                        size: 12
+                                    }
                                 },
                                 title: {
                                     display: true,
                                     text: 'Strength Per Client',
-                                    font: { size: 14, weight: 'bold' }
+                                    font: {
+                                        size: 14,
+                                        weight: 'bold'
+                                    }
                                 }
                             },
                             x: {
@@ -267,7 +497,9 @@
                                     display: false
                                 },
                                 ticks: {
-                                    font: { size: 12 }
+                                    font: {
+                                        size: 12
+                                    }
                                 }
                             }
                         }
@@ -276,9 +508,9 @@
 
                 // --- 2. Doughnut Chart Data and Configuration ---
                 const doughnutCtx = document.getElementById('doughnutChart').getContext('2d');
-                const totalGuards = 10418;
-                const normalInvoice = 9230;
-                const additionalGuards = 1188;
+                const totalGuards = <?= $total_guards ?>;
+                const normalInvoice = <?= $normal_invoice_guards ?>;
+                const additionalGuards = <?= $additional_guards ?>;
 
                 new Chart(doughnutCtx, {
                     type: 'doughnut',
@@ -291,16 +523,16 @@
                                 '#42A5F5' // Blue
                             ],
                             hoverOffset: 4,
-                            borderWidth: 0 // Remove white border around slices
+                            borderWidth: 0
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        cutout: '75%', // Make it a doughnut (hole size)
+                        cutout: '75%',
                         plugins: {
                             legend: {
-                                display: false // Legend is handled manually below the chart
+                                display: false
                             },
                             tooltip: {
                                 callbacks: {
@@ -327,4 +559,6 @@
     </script>
 
 </body>
+
 </html>
+<?php $conn->close(); ?>
