@@ -292,47 +292,12 @@ $available_months_result = $conn->query("
     <div class="main-content min-h-screen">
 
         <!-- Header/Top Bar (Visible on all sizes, but serves as the only header for mobile) -->
-        <header class="flex justify-between items-center py-4 px-4 bg-white shadow-sm lg:shadow-none lg:bg-transparent -mt-6 rounded-lg">
-
-            <!-- Filter Section (commented out) -->
-            <!--
-    <form method="GET" action="" class="flex items-center space-x-4 flex-wrap">
-        <div class="relative">
-            <label class="text-sm font-medium text-gray-700 mr-2">Start Date</label>
-            <input type="date" class="appearance-none bg-white border border-gray-300 rounded-lg py-2 pl-3 pr-10 text-sm focus:ring-blue-500 focus:border-blue-500" name="start_date" value="<?= htmlspecialchars($start_date) ?>">
-        </div>
-        <div class="relative">
-            <label class="text-sm font-medium text-gray-700 mr-2">End Date</label>
-            <input type="date" class="appearance-none bg-white border border-gray-300 rounded-lg py-2 pl-3 pr-10 text-sm focus:ring-blue-500 focus:border-blue-500" name="end_date" value="<?= htmlspecialchars($end_date) ?>">
-        </div>
-        <div class="relative">
-            <label class="text-sm font-medium text-gray-700 mr-2">Month</label>
-            <select class="appearance-none bg-white border border-gray-300 rounded-lg py-2 pl-3 pr-10 text-sm focus:ring-blue-500 focus:border-blue-500" name="month">
-                <option value="">All Months</option>
-                <?php if ($available_months_result):
-                    while ($month_row = $available_months_result->fetch_assoc()): ?>
-                        <option value="<?= $month_row['month'] ?>"
-                            <?= $selected_month == $month_row['month'] ? 'selected' : '' ?>>
-                            <?= date('F Y', strtotime($month_row['month'] . '-01')) ?>
-                        </option>
-                <?php endwhile;
-                endif; ?>
-            </select>
-        </div>
-        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition duration-200">
-            Apply Filters
-        </button>
-        <a href="?" class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg shadow-md transition duration-200">
-            Reset
-        </a>
-    </form>
-    -->
-
+        <header class="flex justify-between items-center py-4 px-4 bg-blue-600 shadow-sm rounded-lg">
             <!-- Right Side (Profile Icon Stays) -->
             <div class="relative ml-auto">
                 <!-- Profile Button -->
                 <button id="profileMenuBtn" class="flex items-center focus:outline-none">
-                    <div class="w-8 h-8 rounded-full bg-blue-400 overflow-hidden border-2 border-white shadow-md cursor-pointer">
+                    <div class="w-8 h-8 rounded-full bg-white overflow-hidden border-2 border-blue-300 shadow-md cursor-pointer">
                         <img src="https://placehold.co/32x32/77A9FF/FFFFFF?text=P"
                             alt="Profile"
                             class="w-full h-full object-cover">
