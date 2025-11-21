@@ -180,7 +180,7 @@ $additional_guards = $total_guards > 0 ? round($total_guards * 0.115) : 0; // 11
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>DASHBOARD - UMS</title>
+    <title>GUARDING DASHBOARD </title>
     <!-- Favicon icon -->
     <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/dashboard.png">
 
