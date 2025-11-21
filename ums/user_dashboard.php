@@ -1,5 +1,14 @@
 <?php
-include '../config.php';
+if (!isset($_SESSION['period'])) {
+    $_SESSION['period'] = date("M Y");
+}
+if (isset($_GET['period'])) {
+    $_SESSION['period'] = $_GET["period"];
+    header("location:index.php");
+    die();
+}
+
+include 'assets/include/dbconnect.php';
 
 // Initialize filter variables
 $start_date = $_GET['start_date'] ?? '';
@@ -159,51 +168,43 @@ if ($top_clients_result->num_rows) {
 $total_guards = $summary['total_guards'] ?? 0;
 $normal_invoice_guards = $total_guards > 0 ? round($total_guards * 0.885) : 0; // 88.5%
 $additional_guards = $total_guards > 0 ? round($total_guards * 0.115) : 0; // 11.5%
-
-// Get available months for filter dropdown
-$available_months_result = $conn->query("
-    SELECT DISTINCT DATE_FORMAT(ADD_DATE, '%Y-%m') as month 
-    FROM master_rr 
-    WHERE ADD_DATE IS NOT NULL AND ADD_DATE != '0000-00-00'
-    ORDER BY month DESC
-");
 ?>
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guarding Revenue Dashboard</title>
-    <!-- Load Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>DASHBOARD - UMS</title>
+    <!-- Favicon icon -->
+    <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/dashboard.png">
+
+    <!-- Custom fonts for this template-->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
+        rel="stylesheet">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.6/js/standalone/selectize.min.js" integrity="sha256-+C0A5Ilqmu4QcSPxrlGpaZxJ04VjsRjKu+G82kl5UJk=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.6/css/selectize.bootstrap3.min.css" integrity="sha256-ze/OEYGcFbPRmvCnrSeKbRTtjG4vGLHXgOqsyLFTRjg=" crossorigin="anonymous" />
+
     <!-- Load Chart.js for graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+
+    <!-- Custom styles for this template-->
+    <link href="css/sb-admin-2.css" rel="stylesheet">
     <style>
-        /* Custom Styles for exact gradient and layout matching */
-        :root {
-            --sidebar-width: 280px;
+        .grad-nvb {
+            background-image: linear-gradient(180deg, rgba(1, 47, 95, 1) -0.4%, rgba(56, 141, 217, 1) 106.1%);
+            color: white;
         }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f7f9fc;
-            /* Light background matching the image */
-        }
-
-        /* Sidebar Gradient (Deep Blue/Teal) */
-        .sidebar-gradient {
-            background: linear-gradient(180deg, #0D47A1 0%, #00BCD4 100%);
-            background: linear-gradient(135deg, #0e2b4f 0%, #11687a 100%);
-            width: var(--sidebar-width);
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 10;
-        }
-
-        /* Metric Card Gradient (Light Blue/Cyan) */
+        /* Custom styles for your dashboard cards */
         .card-gradient-1 {
             background: linear-gradient(90deg, #4FC3F7 0%, #B3E5FC 100%);
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
@@ -223,336 +224,344 @@ $available_months_result = $conn->query("
             background: linear-gradient(90deg, #4FC3F7 0%, #4DD0E1 100%);
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
-
-        /* Main Content Margin */
-        .main-content {
-            margin-left: var(--sidebar-width);
-            padding: 1.5rem;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 1024px) {
-            .sidebar-gradient {
-                width: 100%;
-                height: 60px;
-                /* Collapse sidebar into a top bar for mobile */
-                position: relative;
-            }
-
-            .main-content {
-                margin-left: 0;
-                padding-top: 0;
-            }
-        }
     </style>
+    <script>
+        function perchnage(argument) {
+            window.open(window.location.href + "?period=" + argument, "_self");
+        }
+    </script>
 </head>
 
-<body class="overflow-x-hidden">
+<body id="page-top sidebar-toggled" style="background-color:#F6F6F9!important;">
 
-    <!-- 1. Sidebar/Navigation -->
-    <div class="sidebar-gradient hidden lg:block">
-        <div class="p-6 text-white text-xl font-semibold border-b border-white/20 flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-            Dashboard
+    <!-- Page Wrapper -->
+    <div id="wrapper">
+        <!-- Sidebar included here-->
+        <?php
+        include 'assets/include/sidebar.php';
+        ?>
+        <!-- End of Sidebar -->
+        <!-- Content Wrapper -->
+        <div id="content-wrapper" class="d-flex flex-column">
+
+            <!-- Main Content -->
+            <div id="content">
+
+                <!-- Topbar -->
+                <?php include 'assets/include/topbar.php'; ?>
+                <!-- End of Topbar -->
+                <!-- Begin Page Content -->
+                <div class="container-fluid">
+
+                    <!-- Page Heading -->
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <h1 class="h3 mb-0 text-gray-800">Guarding Revenue Dashboard</h1>
+                        <button class="d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+                            Send Reminder Message
+                        </button>
+                    </div>
+
+                    <!-- Active Filters Display -->
+                    <?php if (!empty($start_date) || !empty($end_date) || !empty($selected_month)): ?>
+                        <div class="mb-4 p-4 bg-blue-50 rounded-lg">
+                            <h6 class="font-bold mb-2 text-blue-800">Active Filters:</h6>
+                            <div class="flex flex-wrap gap-2">
+                                <?php if (!empty($start_date)): ?>
+                                    <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">From: <?= htmlspecialchars($start_date) ?></span>
+                                <?php endif; ?>
+                                <?php if (!empty($end_date)): ?>
+                                    <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">To: <?= htmlspecialchars($end_date) ?></span>
+                                <?php endif; ?>
+                                <?php if (!empty($selected_month)): ?>
+                                    <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">Month: <?= date('F Y', strtotime($selected_month . '-01')) ?></span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- Content Row -->
+                    <div class="row">
+
+                        <!-- GUARDS STRENGTH Card -->
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card shadow-sm h-100 py-2 card-gradient-1">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-s font-weight-bold text-uppercase mb-1 text-white">
+                                                GUARDS STRENGTH</div>
+                                            <div class="h5 mb-0 font-weight-bold text-white">
+                                                <?= number_format($summary['total_guards'] ?? 0) ?>
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-users fa-2x text-white"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CLIENTS Card -->
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card shadow-sm h-100 py-2 card-gradient-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-s font-weight-bold text-uppercase mb-1 text-white">
+                                                CLIENTS</div>
+                                            <div class="h5 mb-0 font-weight-bold text-white">
+                                                <?= number_format($summary['unique_clients'] ?? 0) ?>
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-building fa-2x text-white"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TOTAL REVENUE Card -->
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card shadow-sm h-100 py-2 card-gradient-3">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-s font-weight-bold text-uppercase mb-1 text-white">
+                                                TOTAL REVENUE</div>
+                                            <div class="h5 mb-0 font-weight-bold text-white">
+                                                <?= number_format($summary['total_net'] ?? 0) ?> PKR
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-money-bill-wave fa-2x text-white"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- REVENUE PER GUARD Card -->
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card shadow-sm h-100 py-2 card-gradient-4">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-s font-weight-bold text-uppercase mb-1 text-white">
+                                                REVENUE PER GUARD</div>
+                                            <div class="h5 mb-0 font-weight-bold text-white">
+                                                <?= number_format(($summary['total_net'] ?? 0) / max(1, ($summary['total_guards'] ?? 1)), 2) ?> PKR
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-chart-line fa-2x text-white"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Charts Section -->
+                    <div class="row">
+                        <!-- Bar Chart: Top 10 Highest Strength per Client -->
+                        <div class="col-lg-8 mb-4">
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Top 10 Highest Strength per Client</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-bar">
+                                        <canvas id="barChart" style="height: 300px;"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Doughnut Chart: Invoice Type Guard Strength -->
+                        <div class="col-lg-4 mb-4">
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Invoice Type Guard Strength</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-pie pt-4 pb-2">
+                                        <canvas id="doughnutChart" style="height: 300px;"></canvas>
+                                    </div>
+                                    <div class="mt-4 text-center small">
+                                        <span class="mr-2">
+                                            <i class="fas fa-circle text-danger"></i> Normal Invoice - <?= number_format($normal_invoice_guards) ?> Guards
+                                        </span>
+                                        <br>
+                                        <span class="mr-2">
+                                            <i class="fas fa-circle text-primary"></i> Additional Guards - <?= number_format($additional_guards) ?> Guards
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- /.container-fluid -->
+
+            </div>
+            <!-- End of Main Content -->
+
         </div>
-        <nav class="mt-4">
-            <a href="#" class="block py-3 px-6 text-white/80 hover:bg-white/10 transition duration-150 font-medium bg-white/20">
-                <div class="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                    </svg>
-                    Dashboard
-                </div>
-            </a>
-            <p class="uppercase text-xs text-white/50 tracking-wider py-3 px-6 mt-4">Reports</p>
-            <a href="#" class="block py-3 px-6 text-white/80 hover:bg-white/10 transition duration-150">
-                REPORTS
-            </a>
-            <a href="#" class="block py-3 px-6 text-white/80 hover:bg-white/10 transition duration-150 flex justify-between items-center">
-                Configuration
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-            </a>
-            <a href="#" class="block py-3 px-6 text-white/80 hover:bg-white/10 transition duration-150">
-                REPORTS
-            </a>
-            <a href="#" class="block py-3 px-6 text-white/80 hover:bg-white/10 transition duration-150 flex justify-between items-center">
-                Reports
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-            </a>
-        </nav>
+        <!-- End of Content Wrapper -->
+
     </div>
+    <!-- End of Page Wrapper -->
 
-    <!-- Main Content -->
-    <div class="main-content min-h-screen">
+    <!-- Scroll to Top Button-->
+    <a class="scroll-to-top rounded" href="#page-top">
+        <i class="fas fa-angle-up"></i>
+    </a>
 
-        <!-- Header/Top Bar (Visible on all sizes, but serves as the only header for mobile) -->
-        <header class="flex justify-between items-center py-4 px-4 bg-blue-600 shadow-sm rounded-lg">
-            <!-- Right Side (Profile Icon Stays) -->
-            <div class="relative ml-auto">
-                <!-- Profile Button -->
-                <button id="profileMenuBtn" class="flex items-center focus:outline-none">
-                    <div class="w-8 h-8 rounded-full bg-white overflow-hidden border-2 border-blue-300 shadow-md cursor-pointer">
-                        <img src="https://placehold.co/32x32/77A9FF/FFFFFF?text=P"
-                            alt="Profile"
-                            class="w-full h-full object-cover">
-                    </div>
-                </button>
+    <?php
+    include 'assets/include/logoutmodal.php';
+    ?>
 
-                <!-- Dropdown Menu -->
-                <div id="profileDropdown"
-                    class="hidden absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-lg border border-gray-200 py-2 z-50">
-                    <a href="profile.php"
-                        class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                        Profile
-                    </a>
+    <!-- Bootstrap core JavaScript-->
+    <script src="vendor/jquery/jquery.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
-                    <a href="logout.php"
-                        class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                        Logout
-                    </a>
-                </div>
-            </div>
-        </header>
+    <!-- Core plugin JavaScript-->
+    <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
 
+    <!-- Custom scripts for all pages-->
+    <script src="js/sb-admin-2.min.js"></script>
 
-        <!-- Active Filters Display -->
-        <?php if (!empty($start_date) || !empty($end_date) || !empty($selected_month)): ?>
-            <div class="mt-4 p-4 bg-blue-50 rounded-lg">
-                <h6 class="font-bold mb-2 text-blue-800">Active Filters:</h6>
-                <div class="flex flex-wrap gap-2">
-                    <?php if (!empty($start_date)): ?>
-                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">From: <?= htmlspecialchars($start_date) ?></span>
-                    <?php endif; ?>
-                    <?php if (!empty($end_date)): ?>
-                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">To: <?= htmlspecialchars($end_date) ?></span>
-                    <?php endif; ?>
-                    <?php if (!empty($selected_month)): ?>
-                        <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">Month: <?= date('F Y', strtotime($selected_month . '-01')) ?></span>
-                    <?php endif; ?>
-                </div>
-            </div>
-        <?php endif; ?>
-
-        <!-- Main Dashboard Body -->
-        <main class="mt-8">
-            <div class="flex justify-between items-center mb-6 flex-wrap">
-                <h1 class="text-2xl font-bold text-gray-800">Guarding Revenue Dashboard</h1>
-                <button class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition duration-200 mt-4 lg:mt-0">
-                    Send Reminder Message
-                </button>
-            </div>
-
-            <!-- 2. Key Metric Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-
-                <!-- Card 1: GUARDS STRENGTH -->
-                <div class="card-gradient-1 p-6 rounded-xl text-white">
-                    <p class="text-sm uppercase font-light opacity-80">GUARDS STRENGTH</p>
-                    <h2 class="text-4xl font-extrabold mt-2"><?= number_format($summary['total_guards'] ?? 0) ?></h2>
-                </div>
-
-                <!-- Card 2: CLIENTS -->
-                <div class="card-gradient-2 p-6 rounded-xl text-white">
-                    <p class="text-sm uppercase font-light opacity-80">CLIENTS</p>
-                    <h2 class="text-4xl font-extrabold mt-2"><?= number_format($summary['unique_clients'] ?? 0) ?></h2>
-                </div>
-
-                <!-- Card 3: TOTAL REVENUE -->
-                <div class="card-gradient-3 p-6 rounded-xl text-white">
-                    <p class="text-sm uppercase font-light opacity-80">TOTAL REVENUE</p>
-                    <h2 class="text-4xl font-extrabold mt-2 tracking-tight"><?= number_format($summary['total_net'] ?? 0) ?> PKR</h2>
-                </div>
-
-                <!-- Card 4: REVENUE PER GUARD -->
-                <div class="card-gradient-4 p-6 rounded-xl text-white">
-                    <p class="text-sm uppercase font-light opacity-80">REVENUE PER GUARD</p>
-                    <h2 class="text-4xl font-extrabold mt-2 tracking-tight">
-                        <?= number_format(($summary['total_net'] ?? 0) / max(1, ($summary['total_guards'] ?? 1)), 2) ?> PKR
-                    </h2>
-                </div>
-
-            </div>
-
-            <!-- 3. Charts Section -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                <!-- Bar Chart: Top 10 Highest Strength per Client (2/3 width) -->
-                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-md">
-                    <h3 class="text-xl font-semibold mb-4 text-gray-800">Top 10 Highest Strength per Client</h3>
-                    <div class="h-96 w-full">
-                        <canvas id="barChart"></canvas>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-2">CanvasJS Trial</p>
-                </div>
-
-                <!-- Doughnut Chart: Invoice Type Guard Strength (1/3 width) -->
-                <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-md flex flex-col justify-between">
-                    <h3 class="text-xl font-semibold mb-4 text-gray-800 text-center">Invoice Type Guard Strength</h3>
-                    <div class="relative h-64 w-full flex items-center justify-center">
-                        <canvas id="doughnutChart"></canvas>
-                    </div>
-                    <!-- Legend below the chart -->
-                    <div class="mt-4 text-center">
-                        <p class="text-sm font-medium text-gray-700">Normal Invoice - <span class="text-red-600"><?= number_format($normal_invoice_guards) ?></span> Guards</p>
-                        <p class="text-sm font-medium text-gray-700">Additional Guards - <span class="text-blue-600"><?= number_format($additional_guards) ?></span> Guards</p>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-2">CanvasJS Trial</p>
-                </div>
-            </div>
-
-        </main>
-    </div>
+    <!-- Page level plugins -->
+    <script src="vendor/chart.js/Chart.min.js"></script>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- 1. Bar Chart Data and Configuration ---
+            const barCtx = document.getElementById('barChart').getContext('2d');
 
-            const btn = document.getElementById("profileMenuBtn");
-            const menu = document.getElementById("profileDropdown");
+            // Prepare data for bar chart
+            const clientNames = <?= json_encode(array_column($top_clients_data, 'name')) ?>;
+            const clientGuards = <?= json_encode(array_column($top_clients_data, 'guards')) ?>;
 
-            // Toggle dropdown
-            btn.addEventListener("click", () => {
-                menu.classList.toggle("hidden");
-            });
+            // If no client data, use sample data
+            const labels = clientNames.length > 0 ? clientNames : ['NSC', 'GC', 'MCB', 'UMF-BL', 'RSB', 'PBL', 'NBP', 'Faysal', 'ABL', 'HBL'];
+            const data = clientGuards.length > 0 ? clientGuards : [950, 810, 690, 650, 630, 580, 520, 480, 450, 410];
 
-            // Close dropdown when clicking outside
-            document.addEventListener("click", (e) => {
-                if (!btn.contains(e.target) && !menu.contains(e.target)) {
-                    menu.classList.add("hidden");
-                }
-            });
-            // Function to configure and render charts
-            function renderCharts() {
-                // --- 1. Bar Chart Data and Configuration ---
-                const barCtx = document.getElementById('barChart').getContext('2d');
-
-                // Prepare data for bar chart
-                const clientNames = <?= json_encode(array_column($top_clients_data, 'name')) ?>;
-                const clientGuards = <?= json_encode(array_column($top_clients_data, 'guards')) ?>;
-
-                // If no client data, use sample data
-                const labels = clientNames.length > 0 ? clientNames : ['NSC', 'GC', 'MCB', 'UMF-BL', 'RSB', 'PBL', 'NBP', 'Faysal', 'ABL', 'HBL'];
-                const data = clientGuards.length > 0 ? clientGuards : [950, 810, 690, 650, 630, 580, 520, 480, 450, 410];
-
-                new Chart(barCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Strength Per Client',
-                            data: data,
-                            backgroundColor: [
-                                '#4CAF50', // Green for NSC
-                                '#FF9800', // Orange for GC
-                                '#03A9F4', // Blue for MCB
-                                '#673AB7', // Purple
-                                '#F44336', // Red
-                                '#E91E63', // Pink
-                                '#FFC107', // Amber
-                                '#8BC34A', // Light Green
-                                '#009688', // Teal
-                                '#9E9E9E' // Grey
-                            ],
-                            borderColor: 'transparent',
-                            borderRadius: 6,
-                        }]
+            new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Strength Per Client',
+                        data: data,
+                        backgroundColor: [
+                            '#4CAF50', // Green for NSC
+                            '#FF9800', // Orange for GC
+                            '#03A9F4', // Blue for MCB
+                            '#673AB7', // Purple
+                            '#F44336', // Red
+                            '#E91E63', // Pink
+                            '#FFC107', // Amber
+                            '#8BC34A', // Light Green
+                            '#009688', // Teal
+                            '#9E9E9E' // Grey
+                        ],
+                        borderColor: 'transparent',
+                        borderRadius: 6,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: false
+                        }
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: false
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                font: {
+                                    size: 12
+                                }
                             },
                             title: {
-                                display: false
+                                display: true,
+                                text: 'Strength Per Client',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
                             }
                         },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    font: {
-                                        size: 12
-                                    }
-                                },
-                                title: {
-                                    display: true,
-                                    text: 'Strength Per Client',
-                                    font: {
-                                        size: 14,
-                                        weight: 'bold'
-                                    }
-                                }
+                        x: {
+                            grid: {
+                                display: false
                             },
-                            x: {
-                                grid: {
-                                    display: false
-                                },
-                                ticks: {
-                                    font: {
-                                        size: 12
-                                    }
+                            ticks: {
+                                font: {
+                                    size: 12
                                 }
                             }
                         }
                     }
-                });
+                }
+            });
 
-                // --- 2. Doughnut Chart Data and Configuration ---
-                const doughnutCtx = document.getElementById('doughnutChart').getContext('2d');
-                const totalGuards = <?= $total_guards ?>;
-                const normalInvoice = <?= $normal_invoice_guards ?>;
-                const additionalGuards = <?= $additional_guards ?>;
+            // --- 2. Doughnut Chart Data and Configuration ---
+            const doughnutCtx = document.getElementById('doughnutChart').getContext('2d');
+            const totalGuards = <?= $total_guards ?>;
+            const normalInvoice = <?= $normal_invoice_guards ?>;
+            const additionalGuards = <?= $additional_guards ?>;
 
-                new Chart(doughnutCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Normal Invoice', 'Additional Guards'],
-                        datasets: [{
-                            data: [normalInvoice, additionalGuards],
-                            backgroundColor: [
-                                '#D32F2F', // Reddish-Brown
-                                '#42A5F5' // Blue
-                            ],
-                            hoverOffset: 4,
-                            borderWidth: 0
-                        }]
+            new Chart(doughnutCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Normal Invoice', 'Additional Guards'],
+                    datasets: [{
+                        data: [normalInvoice, additionalGuards],
+                        backgroundColor: [
+                            '#D32F2F', // Reddish-Brown
+                            '#42A5F5' // Blue
+                        ],
+                        hoverOffset: 4,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += context.parsed + ' Guards (' + ((context.parsed / totalGuards) * 100).toFixed(1) + '%)';
+                                    return label;
+                                }
+                            }
+                        }
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        cutout: '75%',
-                        plugins: {
-                            legend: {
-                                display: false
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        let label = context.label || '';
-                                        if (label) {
-                                            label += ': ';
-                                        }
-                                        label += context.parsed + ' Guards (' + ((context.parsed / totalGuards) * 100).toFixed(1) + '%)';
-                                        return label;
-                                    }
-                                }
-                            }
-                        },
-                        layout: {
-                            padding: 10
-                        }
+                    layout: {
+                        padding: 10
                     }
-                });
-            }
-
-            renderCharts();
+                }
+            });
         });
     </script>
 
