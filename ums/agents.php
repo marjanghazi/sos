@@ -14,7 +14,7 @@ if (isset($_POST['add_agent'])) {
     $created_by = $_SESSION['username'] ?? 'Admin';
     
     $stmt = $conn->prepare("INSERT INTO agents (agent_name, device_id, status, created_by) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("iiis", $agent_name, $device_id, $status, $created_by);
+    $stmt->bind_param("siis", $agent_name, $device_id, $status, $created_by);
     
     if ($stmt->execute()) {
         $message = "Agent added successfully!";
@@ -34,7 +34,7 @@ if (isset($_POST['update_agent'])) {
     $status = isset($_POST['status']) ? 1 : 0;
     
     $stmt = $conn->prepare("UPDATE agents SET agent_name = ?, device_id = ?, status = ? WHERE agent_id = ?");
-    $stmt->bind_param("iiii", $agent_name, $device_id, $status, $agent_id);
+    $stmt->bind_param("siii", $agent_name, $device_id, $status, $agent_id);
     
     if ($stmt->execute()) {
         $message = "Agent updated successfully!";
