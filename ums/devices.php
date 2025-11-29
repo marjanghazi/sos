@@ -182,7 +182,7 @@ $devices_result = $conn->query("SELECT * FROM devices ORDER BY device_id DESC");
                     <?php endif; ?>
 
                     <!-- Quick Stats Cards -->
-                    <div class="row mb-4">
+                    <div class="row mb-4 d-none">
                         <!-- Total Devices Card -->
                         <div class="col-xl-3 col-md-6 mb-4">
                             <div class="card border-left-primary shadow h-100 py-2">
