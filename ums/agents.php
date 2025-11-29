@@ -202,7 +202,7 @@ $agents_result = $conn->query("
                     <?php endif; ?>
 
                     <!-- Quick Stats Cards -->
-                    <div class="row mb-4">
+                    <div class="row mb-4 d-none">
                         <!-- Total Agents Card -->
                         <div class="col-xl-3 col-md-6 mb-4">
                             <div class="card border-left-primary shadow h-100 py-2 stats-card">
