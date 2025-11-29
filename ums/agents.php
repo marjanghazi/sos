@@ -310,7 +310,7 @@ $agents_result = $conn->query("
                                             <th>Agent Name</th>
                                             <th>Assigned Device</th>
                                             <th>Status</th>
-                                            <th>Created By</th>
+                                            <th class="d-none">Created By</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -337,7 +337,7 @@ $agents_result = $conn->query("
                                                     <?php echo $agent['status'] ? 'Active' : 'Inactive'; ?>
                                                 </span>
                                             </td>
-                                            <td><?php echo htmlspecialchars($agent['created_by']); ?></td>
+                                            <td class="d-none"><?php echo htmlspecialchars($agent['created_by']); ?></td>
                                             <td class="action-buttons">
                                                 <button class="btn btn-sm btn-primary edit-agent" 
                                                         data-id="<?php echo $agent['agent_id']; ?>"
