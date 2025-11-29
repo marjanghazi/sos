@@ -80,7 +80,7 @@ $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id D
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Customers Management - GUARDING DASHBOARD</title>
+    <title>Customers Management</title>
     <!-- Favicon icon -->
     <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/dashboard.png">
 
