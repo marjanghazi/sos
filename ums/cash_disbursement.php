@@ -151,7 +151,7 @@ $summaries_result = $conn->query("
                     <!-- Page Heading -->
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <h1 class="h3 mb-0 text-gray-800">Cash Disbursement Summary</h1>
-<a href="cash_disbursement_form.php" class="d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+                        <a href="cash_disbursement_add.php" class="d-sm-inline-block btn btn-sm btn-primary shadow-sm">
                             <i class="fas fa-plus fa-sm text-white-50"></i> Add New Summary
                         </a>
                     </div>
@@ -215,16 +215,16 @@ $summaries_result = $conn->query("
                                                 </span>
                                             </td>
                                             <td><?php echo date('M j, Y', strtotime($summary['created_date'])); ?></td>
-                                          <td class="action-buttons">
-    <a href="cash_disbursement_form.php?id=<?php echo $summary['summary_id']; ?>" class="btn btn-sm btn-primary">
-        <i class="fas fa-edit"></i> Edit
-    </a>
-    <button class="btn btn-sm btn-danger delete-summary" 
-            data-id="<?php echo $summary['summary_id']; ?>"
-            data-date="<?php echo date('M j, Y', strtotime($summary['transaction_date'])); ?>">
-        <i class="fas fa-trash"></i> Delete
-    </button>
-</td>
+                                            <td class="action-buttons">
+                                                <a href="cash_disbursement_edit.php?id=<?php echo $summary['summary_id']; ?>" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-edit"></i> Edit
+                                                </a>
+                                                <button class="btn btn-sm btn-danger delete-summary" 
+                                                        data-id="<?php echo $summary['summary_id']; ?>"
+                                                        data-date="<?php echo date('M j, Y', strtotime($summary['transaction_date'])); ?>">
+                                                    <i class="fas fa-trash"></i> Delete
+                                                </button>
+                                            </td>
                                         </tr>
                                         <?php endwhile; ?>
                                     </tbody>
