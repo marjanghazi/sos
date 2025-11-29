@@ -349,7 +349,7 @@ $summaries_result = $conn->query("
                                             <th>Transactions</th>
                                             <th>Total Amount</th>
                                             <th>Created Date</th>
-                                            <th>Created By</th>
+                                            <th class="d-none">Created By</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -380,7 +380,7 @@ $summaries_result = $conn->query("
                                                 </span>
                                             </td>
                                             <td><?php echo date('M j, Y', strtotime($summary['created_date'])); ?></td>
-                                            <td><?php echo htmlspecialchars($summary['created_by']); ?></td>
+                                            <td class="d-none"><?php echo htmlspecialchars($summary['created_by']); ?></td>
                                             <td class="action-buttons">
                                                 <button class="btn btn-sm btn-primary edit-summary" 
                                                         data-id="<?php echo $summary['summary_id']; ?>"
