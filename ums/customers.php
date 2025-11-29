@@ -24,6 +24,9 @@ if (isset($_POST['add_customer'])) {
         $message_type = "error";
     }
     $stmt->close();
+      // Redirect to avoid resubmission
+    header("Location: customers.php");
+    exit();
 }
 
 // Update customer
