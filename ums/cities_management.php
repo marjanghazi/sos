@@ -181,7 +181,7 @@ $cities_result = $conn->query("SELECT * FROM cities ORDER BY city_id DESC");
                                             <th>ID</th>
                                             <th>City Name</th>
                                             <th>Status</th>
-                                            <th>Created By</th>
+                                            <th class="d-none">Created By</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -195,7 +195,7 @@ $cities_result = $conn->query("SELECT * FROM cities ORDER BY city_id DESC");
                                                     <?php echo $city['status'] ? 'Active' : 'Inactive'; ?>
                                                 </span>
                                             </td>
-                                            <td><?php echo htmlspecialchars($city['created_by']); ?></td>
+                                            <td class="d-none"><?php echo htmlspecialchars($city['created_by']); ?></td>
                                             <td class="action-buttons">
                                                 <button class="btn btn-sm btn-primary edit-city" 
                                                         data-id="<?php echo $city['city_id']; ?>"
