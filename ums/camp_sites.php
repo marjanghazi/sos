@@ -25,6 +25,9 @@ if (isset($_POST['add_camp_site'])) {
         $message_type = "error";
     }
     $stmt->close();
+     // Redirect to avoid resubmission
+    header("Location: camp_sites.php");
+    exit();
 }
 
 // Update camp site
