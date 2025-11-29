@@ -24,6 +24,9 @@ if (isset($_POST['add_agent'])) {
         $message_type = "error";
     }
     $stmt->close();
+     // REDIRECT after operation
+    header("Location: agents.php");
+    exit();
 }
 
 // Update agent
