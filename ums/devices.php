@@ -11,10 +11,10 @@ if (isset($_POST['add_device'])) {
     $device_name = $_POST['device_name'];
     $status = isset($_POST['status']) ? 1 : 0;
     $created_by = $_SESSION['username'] ?? 'Admin';
-    
+
     $stmt = $conn->prepare("INSERT INTO devices (device_name, status, created_by) VALUES (?, ?, ?)");
     $stmt->bind_param("sis", $device_name, $status, $created_by);
-    
+
     if ($stmt->execute()) {
         $message = "Device added successfully!";
         $message_type = "success";
@@ -33,10 +33,10 @@ if (isset($_POST['update_device'])) {
     $device_id = $_POST['device_id'];
     $device_name = $_POST['device_name'];
     $status = isset($_POST['status']) ? 1 : 0;
-    
+
     $stmt = $conn->prepare("UPDATE devices SET device_name = ?, status = ? WHERE device_id = ?");
     $stmt->bind_param("sii", $device_name, $status, $device_id);
-    
+
     if ($stmt->execute()) {
         $message = "Device updated successfully!";
         $message_type = "success";
@@ -50,10 +50,10 @@ if (isset($_POST['update_device'])) {
 // Delete device
 if (isset($_GET['delete_id'])) {
     $device_id = $_GET['delete_id'];
-    
+
     $stmt = $conn->prepare("DELETE FROM devices WHERE device_id = ?");
     $stmt->bind_param("i", $device_id);
-    
+
     if ($stmt->execute()) {
         $message = "Device deleted successfully!";
         $message_type = "success";
@@ -62,7 +62,7 @@ if (isset($_GET['delete_id'])) {
         $message_type = "error";
     }
     $stmt->close();
-    
+
     // Redirect to avoid resubmission
     header("Location: devices.php");
     exit();
@@ -94,51 +94,51 @@ $devices_result = $conn->query("SELECT * FROM devices ORDER BY device_id DESC");
     <!-- DataTables CSS -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.bootstrap4.min.css">
-    
+
     <!-- Custom styles for this template-->
     <link href="css/sb-admin-2.css" rel="stylesheet">
-    
+
     <style>
         .grad-nvb {
             background-image: linear-gradient(180deg, rgba(1, 47, 95, 1) -0.4%, rgba(56, 141, 217, 1) 106.1%);
             color: white;
         }
-        
+
         .status-active {
             color: #28a745;
             font-weight: bold;
         }
-        
+
         .status-inactive {
             color: #dc3545;
             font-weight: bold;
         }
-        
+
         .action-buttons .btn {
             margin-right: 5px;
         }
-        
+
         .alert-success {
             background-color: #d4edda;
             border-color: #c3e6cb;
             color: #155724;
         }
-        
+
         .alert-error {
             background-color: #f8d7da;
             border-color: #f5c6cb;
             color: #721c24;
         }
-        
+
         .device-icon {
             font-size: 1.2em;
             margin-right: 8px;
         }
-        
+
         .device-card {
             transition: transform 0.2s;
         }
-        
+
         .device-card:hover {
             transform: translateY(-2px);
         }
@@ -152,7 +152,7 @@ $devices_result = $conn->query("SELECT * FROM devices ORDER BY device_id DESC");
         <!-- Sidebar included here-->
         <?php include 'assets/include/sidebar.php'; ?>
         <!-- End of Sidebar -->
-        
+
         <!-- Content Wrapper -->
         <div id="content-wrapper" class="d-flex flex-column">
 
@@ -162,7 +162,7 @@ $devices_result = $conn->query("SELECT * FROM devices ORDER BY device_id DESC");
                 <!-- Topbar -->
                 <?php include 'assets/include/topbar.php'; ?>
                 <!-- End of Topbar -->
-                
+
                 <!-- Begin Page Content -->
                 <div class="container-fluid">
 
@@ -195,7 +195,7 @@ $devices_result = $conn->query("SELECT * FROM devices ORDER BY device_id DESC");
                                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                                 Total Devices</div>
                                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                                <?php 
+                                                <?php
                                                 $total_devices = $conn->query("SELECT COUNT(*) as total FROM devices")->fetch_assoc()['total'];
                                                 echo $total_devices;
                                                 ?>
@@ -218,7 +218,7 @@ $devices_result = $conn->query("SELECT * FROM devices ORDER BY device_id DESC");
                                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                                 Active Devices</div>
                                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                                <?php 
+                                                <?php
                                                 $active_devices = $conn->query("SELECT COUNT(*) as active FROM devices WHERE status = 1")->fetch_assoc()['active'];
                                                 echo $active_devices;
                                                 ?>
@@ -241,7 +241,7 @@ $devices_result = $conn->query("SELECT * FROM devices ORDER BY device_id DESC");
                                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                                 Inactive Devices</div>
                                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                                <?php 
+                                                <?php
                                                 $inactive_devices = $conn->query("SELECT COUNT(*) as inactive FROM devices WHERE status = 0")->fetch_assoc()['inactive'];
                                                 echo $inactive_devices;
                                                 ?>
@@ -264,7 +264,7 @@ $devices_result = $conn->query("SELECT * FROM devices ORDER BY device_id DESC");
                                             <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
                                                 Active Rate</div>
                                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                                <?php 
+                                                <?php
                                                 $active_rate = $total_devices > 0 ? round(($active_devices / $total_devices) * 100, 1) : 0;
                                                 echo $active_rate . '%';
                                                 ?>
@@ -297,33 +297,33 @@ $devices_result = $conn->query("SELECT * FROM devices ORDER BY device_id DESC");
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php while($device = $devices_result->fetch_assoc()): ?>
-                                        <tr>
-                                            <td><?php echo $device['device_id']; ?></td>
-                                            <td>
-                                                <i class="fas fa-microchip device-icon text-primary"></i>
-                                                <?php echo htmlspecialchars($device['device_name']); ?>
-                                            </td>
-                                            <td>
-                                                <span class="<?php echo $device['status'] ? 'status-active' : 'status-inactive'; ?>">
-                                                    <?php echo $device['status'] ? 'Active' : 'Inactive'; ?>
-                                                </span>
-                                            </td>
-                                            <td class="d-none"><?php echo htmlspecialchars($device['created_by']); ?></td>
-                                            <td class="action-buttons">
-                                                <button class="btn btn-sm btn-primary edit-device" 
+                                        <?php while ($device = $devices_result->fetch_assoc()): ?>
+                                            <tr>
+                                                <td><?php echo $device['device_id']; ?></td>
+                                                <td>
+                                                    <i class="fas fa-microchip device-icon text-primary"></i>
+                                                    <?php echo htmlspecialchars($device['device_name']); ?>
+                                                </td>
+                                                <td>
+                                                    <span class="<?php echo $device['status'] ? 'status-active' : 'status-inactive'; ?>">
+                                                        <?php echo $device['status'] ? 'Active' : 'Inactive'; ?>
+                                                    </span>
+                                                </td>
+                                                <td class="d-none"><?php echo htmlspecialchars($device['created_by']); ?></td>
+                                                <td class="action-buttons">
+                                                    <button class="btn btn-sm btn-primary edit-device"
                                                         data-id="<?php echo $device['device_id']; ?>"
                                                         data-name="<?php echo htmlspecialchars($device['device_name']); ?>"
                                                         data-status="<?php echo $device['status']; ?>">
-                                                    <i class="fas fa-edit"></i> Edit
-                                                </button>
-                                                <button class="btn btn-sm btn-danger delete-device" 
+                                                        <i class="fas fa-edit"></i> Edit
+                                                    </button>
+                                                    <button class="btn btn-sm btn-danger delete-device"
                                                         data-id="<?php echo $device['device_id']; ?>"
                                                         data-name="<?php echo htmlspecialchars($device['device_name']); ?>">
-                                                    <i class="fas fa-trash"></i> Delete
-                                                </button>
-                                            </td>
-                                        </tr>
+                                                        <i class="fas fa-trash"></i> Delete
+                                                    </button>
+                                                </td>
+                                            </tr>
                                         <?php endwhile; ?>
                                     </tbody>
                                 </table>
@@ -461,11 +461,16 @@ $devices_result = $conn->query("SELECT * FROM devices ORDER BY device_id DESC");
             // Initialize DataTable
             $('#devicesTable').DataTable({
                 "pageLength": 10,
-                "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
-                "order": [[0, "desc"]],
+                "lengthMenu": [
+                    [10, 25, 50, -1],
+                    [10, 25, 50, "All"]
+                ],
+                "order": [
+                    [0, "desc"]
+                ],
                 "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
-                       '<"row"<"col-sm-12"tr>>' +
-                       '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+                    '<"row"<"col-sm-12"tr>>' +
+                    '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
                 "language": {
                     "emptyTable": "No devices found",
                     "info": "Showing _START_ to _END_ of _TOTAL_ devices",
@@ -482,31 +487,31 @@ $devices_result = $conn->query("SELECT * FROM devices ORDER BY device_id DESC");
                     }
                 }
             });
-            
+
             // Edit device button click
             $('.edit-device').click(function() {
                 var deviceId = $(this).data('id');
                 var deviceName = $(this).data('name');
                 var status = $(this).data('status');
-                
+
                 $('#edit_device_id').val(deviceId);
                 $('#edit_device_name').val(deviceName);
                 $('#edit_status').prop('checked', status == 1);
-                
+
                 $('#editDeviceModal').modal('show');
             });
-            
+
             // Delete device button click
             $('.delete-device').click(function() {
                 var deviceId = $(this).data('id');
                 var deviceName = $(this).data('name');
-                
+
                 $('#delete_device_name').text(deviceName);
                 $('#confirm_delete').attr('href', 'devices.php?delete_id=' + deviceId);
-                
+
                 $('#deleteDeviceModal').modal('show');
             });
-            
+
             // Auto-hide alerts after 5 seconds
             setTimeout(function() {
                 $('.alert').alert('close');
