@@ -12,10 +12,10 @@ if (isset($_POST['add_agent'])) {
     $device_id = $_POST['device_id'];
     $status = isset($_POST['status']) ? 1 : 0;
     $created_by = $_SESSION['username'] ?? 'Admin';
-    
+
     $stmt = $conn->prepare("INSERT INTO agents (agent_name, device_id, status, created_by) VALUES (?, ?, ?, ?)");
     $stmt->bind_param("siis", $agent_name, $device_id, $status, $created_by);
-    
+
     if ($stmt->execute()) {
         $message = "Agent added successfully!";
         $message_type = "success";
@@ -24,7 +24,7 @@ if (isset($_POST['add_agent'])) {
         $message_type = "error";
     }
     $stmt->close();
-     // REDIRECT after operation
+    // REDIRECT after operation
     header("Location: agents.php");
     exit();
 }
@@ -35,10 +35,10 @@ if (isset($_POST['update_agent'])) {
     $agent_name = $_POST['agent_name'];
     $device_id = $_POST['device_id'];
     $status = isset($_POST['status']) ? 1 : 0;
-    
+
     $stmt = $conn->prepare("UPDATE agents SET agent_name = ?, device_id = ?, status = ? WHERE agent_id = ?");
     $stmt->bind_param("siii", $agent_name, $device_id, $status, $agent_id);
-    
+
     if ($stmt->execute()) {
         $message = "Agent updated successfully!";
         $message_type = "success";
@@ -52,10 +52,10 @@ if (isset($_POST['update_agent'])) {
 // Delete agent
 if (isset($_GET['delete_id'])) {
     $agent_id = $_GET['delete_id'];
-    
+
     $stmt = $conn->prepare("DELETE FROM agents WHERE agent_id = ?");
     $stmt->bind_param("i", $agent_id);
-    
+
     if ($stmt->execute()) {
         $message = "Agent deleted successfully!";
         $message_type = "success";
@@ -64,7 +64,7 @@ if (isset($_GET['delete_id'])) {
         $message_type = "error";
     }
     $stmt->close();
-    
+
     // Redirect to avoid resubmission
     header("Location: agents.php");
     exit();
@@ -104,48 +104,48 @@ $agents_result = $conn->query("
     <!-- DataTables CSS -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.bootstrap4.min.css">
-    
+
     <!-- Custom styles for this template-->
     <link href="css/sb-admin-2.css" rel="stylesheet">
-    
+
     <style>
         .grad-nvb {
             background-image: linear-gradient(180deg, rgba(1, 47, 95, 1) -0.4%, rgba(56, 141, 217, 1) 106.1%);
             color: white;
         }
-        
+
         .status-active {
             color: #28a745;
             font-weight: bold;
         }
-        
+
         .status-inactive {
             color: #dc3545;
             font-weight: bold;
         }
-        
+
         .action-buttons .btn {
             margin-right: 5px;
         }
-        
+
         .alert-success {
             background-color: #d4edda;
             border-color: #c3e6cb;
             color: #155724;
         }
-        
+
         .alert-error {
             background-color: #f8d7da;
             border-color: #f5c6cb;
             color: #721c24;
         }
-        
+
         .agent-icon {
             font-size: 1.2em;
             margin-right: 8px;
             color: #4e73df;
         }
-        
+
         .device-badge {
             font-size: 0.8em;
             padding: 4px 8px;
@@ -154,11 +154,11 @@ $agents_result = $conn->query("
             color: #2c5aa0;
             border: 1px solid #2c5aa0;
         }
-        
+
         .stats-card {
             transition: transform 0.2s;
         }
-        
+
         .stats-card:hover {
             transform: translateY(-2px);
         }
@@ -172,7 +172,7 @@ $agents_result = $conn->query("
         <!-- Sidebar included here-->
         <?php include 'assets/include/sidebar.php'; ?>
         <!-- End of Sidebar -->
-        
+
         <!-- Content Wrapper -->
         <div id="content-wrapper" class="d-flex flex-column">
 
@@ -182,7 +182,7 @@ $agents_result = $conn->query("
                 <!-- Topbar -->
                 <?php include 'assets/include/topbar.php'; ?>
                 <!-- End of Topbar -->
-                
+
                 <!-- Begin Page Content -->
                 <div class="container-fluid">
 
@@ -215,7 +215,7 @@ $agents_result = $conn->query("
                                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                                 Total Agents</div>
                                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                                <?php 
+                                                <?php
                                                 $total_agents = $conn->query("SELECT COUNT(*) as total FROM agents")->fetch_assoc()['total'];
                                                 echo $total_agents;
                                                 ?>
@@ -238,7 +238,7 @@ $agents_result = $conn->query("
                                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                                 Active Agents</div>
                                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                                <?php 
+                                                <?php
                                                 $active_agents = $conn->query("SELECT COUNT(*) as active FROM agents WHERE status = 1")->fetch_assoc()['active'];
                                                 echo $active_agents;
                                                 ?>
@@ -261,7 +261,7 @@ $agents_result = $conn->query("
                                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                                 Inactive Agents</div>
                                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                                <?php 
+                                                <?php
                                                 $inactive_agents = $conn->query("SELECT COUNT(*) as inactive FROM agents WHERE status = 0")->fetch_assoc()['inactive'];
                                                 echo $inactive_agents;
                                                 ?>
@@ -284,7 +284,7 @@ $agents_result = $conn->query("
                                             <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
                                                 Active Rate</div>
                                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                                <?php 
+                                                <?php
                                                 $active_rate = $total_agents > 0 ? round(($active_agents / $total_agents) * 100, 1) : 0;
                                                 echo $active_rate . '%';
                                                 ?>
@@ -318,44 +318,44 @@ $agents_result = $conn->query("
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php while($agent = $agents_result->fetch_assoc()): ?>
-                                        <tr>
-                                            <td><?php echo $agent['agent_id']; ?></td>
-                                            <td>
-                                                <i class="fas fa-user-shield agent-icon"></i>
-                                                <?php echo htmlspecialchars($agent['agent_name']); ?>
-                                            </td>
-                                            <td>
-                                                <?php if($agent['device_name']): ?>
-                                                    <span class="device-badge">
-                                                        <i class="fas fa-microchip"></i>
-                                                        <?php echo htmlspecialchars($agent['device_name']); ?>
+                                        <?php while ($agent = $agents_result->fetch_assoc()): ?>
+                                            <tr>
+                                                <td><?php echo $agent['agent_id']; ?></td>
+                                                <td>
+                                                    <i class="fas fa-user-shield agent-icon"></i>
+                                                    <?php echo htmlspecialchars($agent['agent_name']); ?>
+                                                </td>
+                                                <td>
+                                                    <?php if ($agent['device_name']): ?>
+                                                        <span class="device-badge">
+                                                            <i class="fas fa-microchip"></i>
+                                                            <?php echo htmlspecialchars($agent['device_name']); ?>
+                                                        </span>
+                                                    <?php else: ?>
+                                                        <span class="text-muted">Not Assigned</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td>
+                                                    <span class="<?php echo $agent['status'] ? 'status-active' : 'status-inactive'; ?>">
+                                                        <?php echo $agent['status'] ? 'Active' : 'Inactive'; ?>
                                                     </span>
-                                                <?php else: ?>
-                                                    <span class="text-muted">Not Assigned</span>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td>
-                                                <span class="<?php echo $agent['status'] ? 'status-active' : 'status-inactive'; ?>">
-                                                    <?php echo $agent['status'] ? 'Active' : 'Inactive'; ?>
-                                                </span>
-                                            </td>
-                                            <td class="d-none"><?php echo htmlspecialchars($agent['created_by']); ?></td>
-                                            <td class="action-buttons">
-                                                <button class="btn btn-sm btn-primary edit-agent" 
+                                                </td>
+                                                <td class="d-none"><?php echo htmlspecialchars($agent['created_by']); ?></td>
+                                                <td class="action-buttons">
+                                                    <button class="btn btn-sm btn-primary edit-agent"
                                                         data-id="<?php echo $agent['agent_id']; ?>"
                                                         data-name="<?php echo htmlspecialchars($agent['agent_name']); ?>"
                                                         data-device-id="<?php echo $agent['device_id']; ?>"
                                                         data-status="<?php echo $agent['status']; ?>">
-                                                    <i class="fas fa-edit"></i> Edit
-                                                </button>
-                                                <button class="btn btn-sm btn-danger delete-agent" 
+                                                        <i class="fas fa-edit"></i> Edit
+                                                    </button>
+                                                    <button class="btn btn-sm btn-danger delete-agent"
                                                         data-id="<?php echo $agent['agent_id']; ?>"
                                                         data-name="<?php echo htmlspecialchars($agent['agent_name']); ?>">
-                                                    <i class="fas fa-trash"></i> Delete
-                                                </button>
-                                            </td>
-                                        </tr>
+                                                        <i class="fas fa-trash"></i> Delete
+                                                    </button>
+                                                </td>
+                                            </tr>
                                         <?php endwhile; ?>
                                     </tbody>
                                 </table>
@@ -396,7 +396,7 @@ $agents_result = $conn->query("
                             <label for="device_id">Assign Device</label>
                             <select class="form-control" id="device_id" name="device_id">
                                 <option value="">No Device Assigned</option>
-                                <?php while($device = $devices_result->fetch_assoc()): ?>
+                                <?php while ($device = $devices_result->fetch_assoc()): ?>
                                     <option value="<?php echo $device['device_id']; ?>"><?php echo htmlspecialchars($device['device_name']); ?></option>
                                 <?php endwhile; ?>
                             </select>
@@ -441,10 +441,10 @@ $agents_result = $conn->query("
                             <label for="edit_device_id">Assign Device</label>
                             <select class="form-control" id="edit_device_id" name="device_id">
                                 <option value="">No Device Assigned</option>
-                                <?php 
+                                <?php
                                 // Reset devices result pointer
                                 $devices_result->data_seek(0);
-                                while($device = $devices_result->fetch_assoc()): ?>
+                                while ($device = $devices_result->fetch_assoc()): ?>
                                     <option value="<?php echo $device['device_id']; ?>"><?php echo htmlspecialchars($device['device_name']); ?></option>
                                 <?php endwhile; ?>
                             </select>
@@ -515,11 +515,16 @@ $agents_result = $conn->query("
             // Initialize DataTable
             $('#agentsTable').DataTable({
                 "pageLength": 10,
-                "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
-                "order": [[0, "desc"]],
+                "lengthMenu": [
+                    [10, 25, 50, -1],
+                    [10, 25, 50, "All"]
+                ],
+                "order": [
+                    [0, "desc"]
+                ],
                 "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
-                       '<"row"<"col-sm-12"tr>>' +
-                       '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+                    '<"row"<"col-sm-12"tr>>' +
+                    '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
                 "language": {
                     "emptyTable": "No agents found",
                     "info": "Showing _START_ to _END_ of _TOTAL_ agents",
@@ -536,33 +541,33 @@ $agents_result = $conn->query("
                     }
                 }
             });
-            
+
             // Edit agent button click
             $('.edit-agent').click(function() {
                 var agentId = $(this).data('id');
                 var agentName = $(this).data('name');
                 var deviceId = $(this).data('device-id');
                 var status = $(this).data('status');
-                
+
                 $('#edit_agent_id').val(agentId);
                 $('#edit_agent_name').val(agentName);
                 $('#edit_device_id').val(deviceId);
                 $('#edit_status').prop('checked', status == 1);
-                
+
                 $('#editAgentModal').modal('show');
             });
-            
+
             // Delete agent button click
             $('.delete-agent').click(function() {
                 var agentId = $(this).data('id');
                 var agentName = $(this).data('name');
-                
+
                 $('#delete_agent_name').text(agentName);
                 $('#confirm_delete').attr('href', 'agents.php?delete_id=' + agentId);
-                
+
                 $('#deleteAgentModal').modal('show');
             });
-            
+
             // Auto-hide alerts after 5 seconds
             setTimeout(function() {
                 $('.alert').alert('close');
