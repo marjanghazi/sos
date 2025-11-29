@@ -12,10 +12,10 @@ if (isset($_POST['add_customer'])) {
     $revenue_auth = $_POST['revenue_auth'];
     $status = isset($_POST['status']) ? 1 : 0;
     $created_by = $_SESSION['username'] ?? 'Admin';
-    
+
     $stmt = $conn->prepare("INSERT INTO customers (customer_name, revenue_auth, status, created_by) VALUES (?, ?, ?, ?)");
     $stmt->bind_param("ssis", $customer_name, $revenue_auth, $status, $created_by);
-    
+
     if ($stmt->execute()) {
         $message = "Customer added successfully!";
         $message_type = "success";
@@ -24,7 +24,7 @@ if (isset($_POST['add_customer'])) {
         $message_type = "error";
     }
     $stmt->close();
-      // Redirect to avoid resubmission
+    // Redirect to avoid resubmission
     header("Location: customers.php");
     exit();
 }
@@ -35,10 +35,10 @@ if (isset($_POST['update_customer'])) {
     $customer_name = $_POST['customer_name'];
     $revenue_auth = $_POST['revenue_auth'];
     $status = isset($_POST['status']) ? 1 : 0;
-    
+
     $stmt = $conn->prepare("UPDATE customers SET customer_name = ?, revenue_auth = ?, status = ? WHERE customer_id = ?");
     $stmt->bind_param("ssii", $customer_name, $revenue_auth, $status, $customer_id);
-    
+
     if ($stmt->execute()) {
         $message = "Customer updated successfully!";
         $message_type = "success";
@@ -52,10 +52,10 @@ if (isset($_POST['update_customer'])) {
 // Delete customer
 if (isset($_GET['delete_id'])) {
     $customer_id = $_GET['delete_id'];
-    
+
     $stmt = $conn->prepare("DELETE FROM customers WHERE customer_id = ?");
     $stmt->bind_param("i", $customer_id);
-    
+
     if ($stmt->execute()) {
         $message = "Customer deleted successfully!";
         $message_type = "success";
@@ -64,7 +64,7 @@ if (isset($_GET['delete_id'])) {
         $message_type = "error";
     }
     $stmt->close();
-    
+
     // Redirect to avoid resubmission
     header("Location: customers.php");
     exit();
@@ -96,66 +96,66 @@ $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id D
     <!-- DataTables CSS -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.bootstrap4.min.css">
-    
+
     <!-- Custom styles for this template-->
     <link href="css/sb-admin-2.css" rel="stylesheet">
-    
+
     <style>
         .grad-nvb {
             background-image: linear-gradient(180deg, rgba(1, 47, 95, 1) -0.4%, rgba(56, 141, 217, 1) 106.1%);
             color: white;
         }
-        
+
         .status-active {
             color: #28a745;
             font-weight: bold;
         }
-        
+
         .status-inactive {
             color: #dc3545;
             font-weight: bold;
         }
-        
+
         .action-buttons .btn {
             margin-right: 5px;
         }
-        
+
         .alert-success {
             background-color: #d4edda;
             border-color: #c3e6cb;
             color: #155724;
         }
-        
+
         .alert-error {
             background-color: #f8d7da;
             border-color: #f5c6cb;
             color: #721c24;
         }
-        
+
         .revenue-auth-badge {
             font-size: 0.8em;
             padding: 4px 8px;
             border-radius: 12px;
         }
-        
+
         .revenue-auth-high {
             background-color: #e8f5e8;
             color: #2e7d32;
             border: 1px solid #2e7d32;
         }
-        
+
         .revenue-auth-medium {
             background-color: #fff3e0;
             color: #ef6c00;
             border: 1px solid #ef6c00;
         }
-        
+
         .revenue-auth-low {
             background-color: #ffebee;
             color: #c62828;
             border: 1px solid #c62828;
         }
-        
+
         .revenue-auth-premium {
             background-color: #f3e5f5;
             color: #7b1fa2;
@@ -171,7 +171,7 @@ $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id D
         <!-- Sidebar included here-->
         <?php include 'assets/include/sidebar.php'; ?>
         <!-- End of Sidebar -->
-        
+
         <!-- Content Wrapper -->
         <div id="content-wrapper" class="d-flex flex-column">
 
@@ -181,7 +181,7 @@ $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id D
                 <!-- Topbar -->
                 <?php include 'assets/include/topbar.php'; ?>
                 <!-- End of Topbar -->
-                
+
                 <!-- Begin Page Content -->
                 <div class="container-fluid">
 
@@ -222,9 +222,9 @@ $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id D
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php while($customer = $customers_result->fetch_assoc()): 
+                                        <?php while ($customer = $customers_result->fetch_assoc()):
                                             $revenue_auth_class = '';
-                                            switch(strtolower($customer['revenue_auth'])) {
+                                            switch (strtolower($customer['revenue_auth'])) {
                                                 case 'high':
                                                     $revenue_auth_class = 'revenue-auth-high';
                                                     break;
@@ -241,35 +241,35 @@ $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id D
                                                     $revenue_auth_class = 'revenue-auth-medium';
                                             }
                                         ?>
-                                        <tr>
-                                            <td><?php echo $customer['customer_id']; ?></td>
-                                            <td><?php echo htmlspecialchars($customer['customer_name']); ?></td>
-                                            <td>
-                                                <span class="revenue-auth-badge <?php echo $revenue_auth_class; ?>">
-                                                    <?php echo htmlspecialchars($customer['revenue_auth']); ?>
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span class="<?php echo $customer['status'] ? 'status-active' : 'status-inactive'; ?>">
-                                                    <?php echo $customer['status'] ? 'Active' : 'Inactive'; ?>
-                                                </span>
-                                            </td>
-                                            <td class="d-none"><?php echo htmlspecialchars($customer['created_by']); ?></td>
-                                            <td class="action-buttons">
-                                                <button class="btn btn-sm btn-primary edit-customer" 
+                                            <tr>
+                                                <td><?php echo $customer['customer_id']; ?></td>
+                                                <td><?php echo htmlspecialchars($customer['customer_name']); ?></td>
+                                                <td>
+                                                    <span class="revenue-auth-badge <?php echo $revenue_auth_class; ?>">
+                                                        <?php echo htmlspecialchars($customer['revenue_auth']); ?>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="<?php echo $customer['status'] ? 'status-active' : 'status-inactive'; ?>">
+                                                        <?php echo $customer['status'] ? 'Active' : 'Inactive'; ?>
+                                                    </span>
+                                                </td>
+                                                <td class="d-none"><?php echo htmlspecialchars($customer['created_by']); ?></td>
+                                                <td class="action-buttons">
+                                                    <button class="btn btn-sm btn-primary edit-customer"
                                                         data-id="<?php echo $customer['customer_id']; ?>"
                                                         data-name="<?php echo htmlspecialchars($customer['customer_name']); ?>"
                                                         data-revenue-auth="<?php echo htmlspecialchars($customer['revenue_auth']); ?>"
                                                         data-status="<?php echo $customer['status']; ?>">
-                                                    <i class="fas fa-edit"></i> Edit
-                                                </button>
-                                                <button class="btn btn-sm btn-danger delete-customer" 
+                                                        <i class="fas fa-edit"></i> Edit
+                                                    </button>
+                                                    <button class="btn btn-sm btn-danger delete-customer"
                                                         data-id="<?php echo $customer['customer_id']; ?>"
                                                         data-name="<?php echo htmlspecialchars($customer['customer_name']); ?>">
-                                                    <i class="fas fa-trash"></i> Delete
-                                                </button>
-                                            </td>
-                                        </tr>
+                                                        <i class="fas fa-trash"></i> Delete
+                                                    </button>
+                                                </td>
+                                            </tr>
                                         <?php endwhile; ?>
                                     </tbody>
                                 </table>
@@ -426,11 +426,16 @@ $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id D
             // Initialize DataTable
             $('#customersTable').DataTable({
                 "pageLength": 10,
-                "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
-                "order": [[0, "desc"]],
+                "lengthMenu": [
+                    [10, 25, 50, -1],
+                    [10, 25, 50, "All"]
+                ],
+                "order": [
+                    [0, "desc"]
+                ],
                 "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
-                       '<"row"<"col-sm-12"tr>>' +
-                       '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+                    '<"row"<"col-sm-12"tr>>' +
+                    '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
                 "language": {
                     "emptyTable": "No customers found",
                     "info": "Showing _START_ to _END_ of _TOTAL_ customers",
@@ -447,33 +452,33 @@ $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id D
                     }
                 }
             });
-            
+
             // Edit customer button click
             $('.edit-customer').click(function() {
                 var customerId = $(this).data('id');
                 var customerName = $(this).data('name');
                 var revenueAuth = $(this).data('revenue-auth');
                 var status = $(this).data('status');
-                
+
                 $('#edit_customer_id').val(customerId);
                 $('#edit_customer_name').val(customerName);
                 $('#edit_revenue_auth').val(revenueAuth);
                 $('#edit_status').prop('checked', status == 1);
-                
+
                 $('#editCustomerModal').modal('show');
             });
-            
+
             // Delete customer button click
             $('.delete-customer').click(function() {
                 var customerId = $(this).data('id');
                 var customerName = $(this).data('name');
-                
+
                 $('#delete_customer_name').text(customerName);
                 $('#confirm_delete').attr('href', 'customers.php?delete_id=' + customerId);
-                
+
                 $('#deleteCustomerModal').modal('show');
             });
-            
+
             // Auto-hide alerts after 5 seconds
             setTimeout(function() {
                 $('.alert').alert('close');
