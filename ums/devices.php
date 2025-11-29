@@ -23,6 +23,9 @@ if (isset($_POST['add_device'])) {
         $message_type = "error";
     }
     $stmt->close();
+    // Redirect to avoid resubmission
+    header("Location: devices.php");
+    exit();
 }
 
 // Update device
