@@ -10,32 +10,8 @@ $message_type = $_SESSION['message_type'] ?? '';
 unset($_SESSION['message']);
 unset($_SESSION['message_type']);
 
-// Check if we're in edit mode
-$edit_mode = false;
-$summary_id = $_GET['id'] ?? 0;
-$summary = null;
-
-// If we have an ID, we're in edit mode - fetch the summary data
-if ($summary_id) {
-    $edit_mode = true;
-    $stmt = $conn->prepare("SELECT * FROM cash_disbursement_summary WHERE summary_id = ?");
-    $stmt->bind_param("i", $summary_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $summary = $result->fetch_assoc();
-    $stmt->close();
-    
-    // If summary not found, redirect to list
-    if (!$summary) {
-        $_SESSION['message'] = "Cash disbursement summary not found!";
-        $_SESSION['message_type'] = "error";
-        header("Location: cash_disbursement.php");
-        exit();
-    }
-}
-
-// Handle form submission for both add and edit
-if (isset($_POST['save_summary'])) {
+// Add new cash disbursement summary
+if (isset($_POST['add_summary'])) {
     $transaction_date = $_POST['transaction_date'];
     $city_id = $_POST['city_id'];
     $camp_site_id = $_POST['camp_site_id'];
@@ -45,37 +21,19 @@ if (isset($_POST['save_summary'])) {
     $total_amount = $_POST['total_amount'];
     $created_by = $_SESSION['username'] ?? 'Admin';
     
-    if ($edit_mode) {
-        // Update existing summary
-        $summary_id = $_POST['summary_id'];
-        $stmt = $conn->prepare("UPDATE cash_disbursement_summary SET transaction_date = ?, city_id = ?, camp_site_id = ?, setup_fee_applied = ?, setup_fee_type = ?, total_transactions = ?, total_amount = ? WHERE summary_id = ?");
-        $stmt->bind_param("siissiii", $transaction_date, $city_id, $camp_site_id, $setup_fee_applied, $setup_fee_type, $total_transactions, $total_amount, $summary_id);
-        
-        if ($stmt->execute()) {
-            $_SESSION['message'] = "Cash disbursement summary updated successfully!";
-            $_SESSION['message_type'] = "success";
-        } else {
-            $_SESSION['message'] = "Error updating cash disbursement summary: " . $stmt->error;
-            $_SESSION['message_type'] = "error";
-        }
+    $stmt = $conn->prepare("INSERT INTO cash_disbursement_summary (transaction_date, city_id, camp_site_id, setup_fee_applied, setup_fee_type, total_transactions, total_amount, created_date, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)");
+    $stmt->bind_param("siissiis", $transaction_date, $city_id, $camp_site_id, $setup_fee_applied, $setup_fee_type, $total_transactions, $total_amount, $created_by);
+    
+    if ($stmt->execute()) {
+        $_SESSION['message'] = "Cash disbursement summary added successfully!";
+        $_SESSION['message_type'] = "success";
+        header("Location: cash_disbursement.php");
+        exit();
     } else {
-        // Add new summary
-        $stmt = $conn->prepare("INSERT INTO cash_disbursement_summary (transaction_date, city_id, camp_site_id, setup_fee_applied, setup_fee_type, total_transactions, total_amount, created_date, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)");
-        $stmt->bind_param("siissiis", $transaction_date, $city_id, $camp_site_id, $setup_fee_applied, $setup_fee_type, $total_transactions, $total_amount, $created_by);
-        
-        if ($stmt->execute()) {
-            $_SESSION['message'] = "Cash disbursement summary added successfully!";
-            $_SESSION['message_type'] = "success";
-        } else {
-            $_SESSION['message'] = "Error adding cash disbursement summary: " . $stmt->error;
-            $_SESSION['message_type'] = "error";
-        }
+        $message = "Error adding cash disbursement summary: " . $stmt->error;
+        $message_type = "error";
     }
     $stmt->close();
-    
-    // Redirect to prevent form resubmission
-    header("Location: cash_disbursement.php");
-    exit();
 }
 
 // Fetch all cities and camp sites for dropdowns
@@ -92,7 +50,7 @@ $camp_sites_result = $conn->query("SELECT * FROM camp_sites WHERE status = 1 ORD
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title><?php echo $edit_mode ? 'Edit' : 'Add'; ?> Cash Disbursement Summary - GUARDING DASHBOARD</title>
+    <title>Add Cash Disbursement Summary - GUARDING DASHBOARD</title>
     <!-- Favicon icon -->
     <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/dashboard.png">
 
@@ -127,10 +85,6 @@ $camp_sites_result = $conn->query("SELECT * FROM camp_sites WHERE status = 1 ORD
             box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
             border: 1px solid #e3e6f0;
         }
-        
-        .page-title {
-            color: #4e73df;
-        }
     </style>
 </head>
 
@@ -157,10 +111,7 @@ $camp_sites_result = $conn->query("SELECT * FROM camp_sites WHERE status = 1 ORD
 
                     <!-- Page Heading -->
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-                        <h1 class="h3 mb-0 text-gray-800 page-title">
-                            <i class="fas <?php echo $edit_mode ? 'fa-edit' : 'fa-plus'; ?>"></i>
-                            <?php echo $edit_mode ? 'Edit' : 'Add'; ?> Cash Disbursement Summary
-                        </h1>
+                        <h1 class="h3 mb-0 text-gray-800">Add Cash Disbursement Summary</h1>
                         <a href="cash_disbursement.php" class="d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
                             <i class="fas fa-arrow-left fa-sm text-white-50"></i> Back to List
                         </a>
@@ -179,22 +130,15 @@ $camp_sites_result = $conn->query("SELECT * FROM camp_sites WHERE status = 1 ORD
                     <!-- Form Card -->
                     <div class="card form-card">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">
-                                <?php echo $edit_mode ? 'Edit Summary Information' : 'Enter Summary Information'; ?>
-                            </h6>
+                            <h6 class="m-0 font-weight-bold text-primary">Summary Information</h6>
                         </div>
                         <div class="card-body">
-                            <form method="POST" action="cash_disbursement_form.php<?php echo $edit_mode ? '?id=' . $summary_id : ''; ?>">
-                                <?php if ($edit_mode): ?>
-                                    <input type="hidden" name="summary_id" value="<?php echo $summary['summary_id']; ?>">
-                                <?php endif; ?>
-                                
+                            <form method="POST" action="cash_disbursement_add.php">
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="transaction_date">Transaction Date *</label>
-                                            <input type="datetime-local" class="form-control" id="transaction_date" name="transaction_date" 
-                                                   value="<?php echo $edit_mode ? date('Y-m-d\TH:i', strtotime($summary['transaction_date'])) : ''; ?>" required>
+                                            <input type="datetime-local" class="form-control" id="transaction_date" name="transaction_date" required>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
@@ -202,13 +146,8 @@ $camp_sites_result = $conn->query("SELECT * FROM camp_sites WHERE status = 1 ORD
                                             <label for="city_id">City *</label>
                                             <select class="form-control" id="city_id" name="city_id" required>
                                                 <option value="">Select City</option>
-                                                <?php 
-                                                while($city = $cities_result->fetch_assoc()): 
-                                                    $selected = ($edit_mode && $city['city_id'] == $summary['city_id']) ? 'selected' : '';
-                                                ?>
-                                                    <option value="<?php echo $city['city_id']; ?>" <?php echo $selected; ?>>
-                                                        <?php echo htmlspecialchars($city['city_name']); ?>
-                                                    </option>
+                                                <?php while($city = $cities_result->fetch_assoc()): ?>
+                                                    <option value="<?php echo $city['city_id']; ?>"><?php echo htmlspecialchars($city['city_name']); ?></option>
                                                 <?php endwhile; ?>
                                             </select>
                                         </div>
@@ -221,13 +160,8 @@ $camp_sites_result = $conn->query("SELECT * FROM camp_sites WHERE status = 1 ORD
                                             <label for="camp_site_id">Camp Site *</label>
                                             <select class="form-control" id="camp_site_id" name="camp_site_id" required>
                                                 <option value="">Select Camp Site</option>
-                                                <?php 
-                                                while($camp_site = $camp_sites_result->fetch_assoc()): 
-                                                    $selected = ($edit_mode && $camp_site['camp_site_id'] == $summary['camp_site_id']) ? 'selected' : '';
-                                                ?>
-                                                    <option value="<?php echo $camp_site['camp_site_id']; ?>" <?php echo $selected; ?>>
-                                                        <?php echo htmlspecialchars($camp_site['camp_site_name']); ?>
-                                                    </option>
+                                                <?php while($camp_site = $camp_sites_result->fetch_assoc()): ?>
+                                                    <option value="<?php echo $camp_site['camp_site_id']; ?>"><?php echo htmlspecialchars($camp_site['camp_site_name']); ?></option>
                                                 <?php endwhile; ?>
                                             </select>
                                         </div>
@@ -237,8 +171,8 @@ $camp_sites_result = $conn->query("SELECT * FROM camp_sites WHERE status = 1 ORD
                                             <label for="setup_fee_applied">Setup Fee Applied *</label>
                                             <select class="form-control" id="setup_fee_applied" name="setup_fee_applied" required>
                                                 <option value="">Select Option</option>
-                                                <option value="Yes" <?php echo ($edit_mode && $summary['setup_fee_applied'] == 'Yes') ? 'selected' : ''; ?>>Yes</option>
-                                                <option value="No" <?php echo ($edit_mode && $summary['setup_fee_applied'] == 'No') ? 'selected' : ''; ?>>No</option>
+                                                <option value="Yes">Yes</option>
+                                                <option value="No">No</option>
                                             </select>
                                         </div>
                                     </div>
@@ -250,17 +184,16 @@ $camp_sites_result = $conn->query("SELECT * FROM camp_sites WHERE status = 1 ORD
                                             <label for="setup_fee_type">Setup Fee Type</label>
                                             <select class="form-control" id="setup_fee_type" name="setup_fee_type">
                                                 <option value="">Select Fee Type</option>
-                                                <option value="Fixed" <?php echo ($edit_mode && $summary['setup_fee_type'] == 'Fixed') ? 'selected' : ''; ?>>Fixed</option>
-                                                <option value="Percentage" <?php echo ($edit_mode && $summary['setup_fee_type'] == 'Percentage') ? 'selected' : ''; ?>>Percentage</option>
-                                                <option value="Variable" <?php echo ($edit_mode && $summary['setup_fee_type'] == 'Variable') ? 'selected' : ''; ?>>Variable</option>
+                                                <option value="Fixed">Fixed</option>
+                                                <option value="Percentage">Percentage</option>
+                                                <option value="Variable">Variable</option>
                                             </select>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="total_transactions">Total Transactions *</label>
-                                            <input type="number" class="form-control" id="total_transactions" name="total_transactions" 
-                                                   value="<?php echo $edit_mode ? $summary['total_transactions'] : ''; ?>" min="0" required>
+                                            <input type="number" class="form-control" id="total_transactions" name="total_transactions" min="0" required>
                                         </div>
                                     </div>
                                 </div>
@@ -269,28 +202,19 @@ $camp_sites_result = $conn->query("SELECT * FROM camp_sites WHERE status = 1 ORD
                                     <div class="col-md-12">
                                         <div class="form-group">
                                             <label for="total_amount">Total Amount (PKR) *</label>
-                                            <input type="number" class="form-control" id="total_amount" name="total_amount" 
-                                                   value="<?php echo $edit_mode ? $summary['total_amount'] : ''; ?>" min="0" step="0.01" required>
+                                            <input type="number" class="form-control" id="total_amount" name="total_amount" min="0" step="0.01" required>
                                         </div>
                                     </div>
                                 </div>
                                 
                                 <div class="row">
                                     <div class="col-md-12">
-                                        <button type="submit" name="save_summary" class="btn btn-primary btn-lg">
-                                            <i class="fas fa-save"></i> 
-                                            <?php echo $edit_mode ? 'Update Summary' : 'Add Summary'; ?>
+                                        <button type="submit" name="add_summary" class="btn btn-primary btn-lg">
+                                            <i class="fas fa-save"></i> Add Summary
                                         </button>
                                         <a href="cash_disbursement.php" class="btn btn-secondary btn-lg">
                                             <i class="fas fa-times"></i> Cancel
                                         </a>
-                                        
-                                        <?php if ($edit_mode): ?>
-                                            <a href="cash_disbursement.php?delete_id=<?php echo $summary_id; ?>" class="btn btn-danger btn-lg float-right" 
-                                               onclick="return confirm('Are you sure you want to delete this summary? This action cannot be undone.')">
-                                                <i class="fas fa-trash"></i> Delete
-                                            </a>
-                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </form>
@@ -333,12 +257,10 @@ $camp_sites_result = $conn->query("SELECT * FROM camp_sites WHERE status = 1 ORD
                 $('.alert').alert('close');
             }, 5000);
             
-            // Set current datetime as default for new entries
-            <?php if (!$edit_mode): ?>
-                var now = new Date();
-                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-                document.getElementById('transaction_date').value = now.toISOString().slice(0,16);
-            <?php endif; ?>
+            // Set current datetime as default
+            var now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('transaction_date').value = now.toISOString().slice(0,16);
         });
     </script>
 
