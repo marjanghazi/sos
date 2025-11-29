@@ -90,7 +90,7 @@ $camp_sites_result = $conn->query("
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Camp Sites Management - GUARDING DASHBOARD</title>
+    <title>Camp Sites Management</title>
     <!-- Favicon icon -->
     <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/dashboard.png">
 
@@ -219,7 +219,7 @@ $camp_sites_result = $conn->query("
                                             <th>City</th>
                                             <th>Setup Type</th>
                                             <th>Status</th>
-                                            <th>Created By</th>
+                                            <th class="d-none">Created By</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -254,7 +254,7 @@ $camp_sites_result = $conn->query("
                                                     <?php echo $camp_site['status'] ? 'Active' : 'Inactive'; ?>
                                                 </span>
                                             </td>
-                                            <td><?php echo htmlspecialchars($camp_site['created_by']); ?></td>
+                                            <td class="d-none"><?php echo htmlspecialchars($camp_site['created_by']); ?></td>
                                             <td class="action-buttons">
                                                 <button class="btn btn-sm btn-primary edit-camp-site" 
                                                         data-id="<?php echo $camp_site['camp_site_id']; ?>"
