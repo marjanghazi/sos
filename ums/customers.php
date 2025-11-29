@@ -214,7 +214,7 @@ $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id D
                                             <th>Customer Name</th>
                                             <th>Revenue Authorization</th>
                                             <th>Status</th>
-                                            <th>Created By</th>
+                                            <th class="d-none">Created By</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -251,7 +251,7 @@ $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id D
                                                     <?php echo $customer['status'] ? 'Active' : 'Inactive'; ?>
                                                 </span>
                                             </td>
-                                            <td><?php echo htmlspecialchars($customer['created_by']); ?></td>
+                                            <td class="d-none"><?php echo htmlspecialchars($customer['created_by']); ?></td>
                                             <td class="action-buttons">
                                                 <button class="btn btn-sm btn-primary edit-customer" 
                                                         data-id="<?php echo $customer['customer_id']; ?>"
