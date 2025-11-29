@@ -23,6 +23,9 @@ if (isset($_POST['add_city'])) {
         $message_type = "error";
     }
     $stmt->close();
+     // Redirect to avoid resubmission
+    header("Location: cities_management.php");
+    exit();
 }
 
 // Update city
