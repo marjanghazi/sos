@@ -13,10 +13,10 @@ if (isset($_POST['add_camp_site'])) {
     $setup_type = $_POST['setup_type'];
     $status = isset($_POST['status']) ? 1 : 0;
     $created_by = $_SESSION['username'] ?? 'Admin';
-    
+
     $stmt = $conn->prepare("INSERT INTO camp_sites (city_id, camp_site_name, setup_type, status, created_by) VALUES (?, ?, ?, ?, ?)");
     $stmt->bind_param("issis", $city_id, $camp_site_name, $setup_type, $status, $created_by);
-    
+
     if ($stmt->execute()) {
         $message = "Camp site added successfully!";
         $message_type = "success";
@@ -25,7 +25,7 @@ if (isset($_POST['add_camp_site'])) {
         $message_type = "error";
     }
     $stmt->close();
-     // Redirect to avoid resubmission
+    // Redirect to avoid resubmission
     header("Location: camp_sites.php");
     exit();
 }
@@ -37,10 +37,10 @@ if (isset($_POST['update_camp_site'])) {
     $camp_site_name = $_POST['camp_site_name'];
     $setup_type = $_POST['setup_type'];
     $status = isset($_POST['status']) ? 1 : 0;
-    
+
     $stmt = $conn->prepare("UPDATE camp_sites SET city_id = ?, camp_site_name = ?, setup_type = ?, status = ? WHERE camp_site_id = ?");
     $stmt->bind_param("issii", $city_id, $camp_site_name, $setup_type, $status, $camp_site_id);
-    
+
     if ($stmt->execute()) {
         $message = "Camp site updated successfully!";
         $message_type = "success";
@@ -54,10 +54,10 @@ if (isset($_POST['update_camp_site'])) {
 // Delete camp site
 if (isset($_GET['delete_id'])) {
     $camp_site_id = $_GET['delete_id'];
-    
+
     $stmt = $conn->prepare("DELETE FROM camp_sites WHERE camp_site_id = ?");
     $stmt->bind_param("i", $camp_site_id);
-    
+
     if ($stmt->execute()) {
         $message = "Camp site deleted successfully!";
         $message_type = "success";
@@ -66,7 +66,7 @@ if (isset($_GET['delete_id'])) {
         $message_type = "error";
     }
     $stmt->close();
-    
+
     // Redirect to avoid resubmission
     header("Location: camp_sites.php");
     exit();
@@ -106,60 +106,60 @@ $camp_sites_result = $conn->query("
     <!-- DataTables CSS -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.bootstrap4.min.css">
-    
+
     <!-- Custom styles for this template-->
     <link href="css/sb-admin-2.css" rel="stylesheet">
-    
+
     <style>
         .grad-nvb {
             background-image: linear-gradient(180deg, rgba(1, 47, 95, 1) -0.4%, rgba(56, 141, 217, 1) 106.1%);
             color: white;
         }
-        
+
         .status-active {
             color: #28a745;
             font-weight: bold;
         }
-        
+
         .status-inactive {
             color: #dc3545;
             font-weight: bold;
         }
-        
+
         .action-buttons .btn {
             margin-right: 5px;
         }
-        
+
         .alert-success {
             background-color: #d4edda;
             border-color: #c3e6cb;
             color: #155724;
         }
-        
+
         .alert-error {
             background-color: #f8d7da;
             border-color: #f5c6cb;
             color: #721c24;
         }
-        
+
         .setup-type-badge {
             font-size: 0.8em;
             padding: 4px 8px;
             border-radius: 12px;
         }
-        
+
         .setup-type-permanent {
             background-color: #e8f5e8;
             color: #2e7d32;
             border: 1px solid #2e7d32;
         }
-        
+
         .setup-type-temporary {
             background-color: #fff3e0;
             color: #ef6c00;
             border: 1px solid #ef6c00;
         }
-        
+
         .setup-type-mobile {
             background-color: #e3f2fd;
             color: #1565c0;
@@ -175,7 +175,7 @@ $camp_sites_result = $conn->query("
         <!-- Sidebar included here-->
         <?php include 'assets/include/sidebar.php'; ?>
         <!-- End of Sidebar -->
-        
+
         <!-- Content Wrapper -->
         <div id="content-wrapper" class="d-flex flex-column">
 
@@ -185,7 +185,7 @@ $camp_sites_result = $conn->query("
                 <!-- Topbar -->
                 <?php include 'assets/include/topbar.php'; ?>
                 <!-- End of Topbar -->
-                
+
                 <!-- Begin Page Content -->
                 <div class="container-fluid">
 
@@ -227,9 +227,9 @@ $camp_sites_result = $conn->query("
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php while($camp_site = $camp_sites_result->fetch_assoc()): 
+                                        <?php while ($camp_site = $camp_sites_result->fetch_assoc()):
                                             $setup_type_class = '';
-                                            switch(strtolower($camp_site['setup_type'])) {
+                                            switch (strtolower($camp_site['setup_type'])) {
                                                 case 'permanent':
                                                     $setup_type_class = 'setup-type-permanent';
                                                     break;
@@ -243,37 +243,37 @@ $camp_sites_result = $conn->query("
                                                     $setup_type_class = 'setup-type-permanent';
                                             }
                                         ?>
-                                        <tr>
-                                            <td><?php echo $camp_site['camp_site_id']; ?></td>
-                                            <td><?php echo htmlspecialchars($camp_site['camp_site_name']); ?></td>
-                                            <td><?php echo htmlspecialchars($camp_site['city_name']); ?></td>
-                                            <td>
-                                                <span class="setup-type-badge <?php echo $setup_type_class; ?>">
-                                                    <?php echo htmlspecialchars($camp_site['setup_type']); ?>
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span class="<?php echo $camp_site['status'] ? 'status-active' : 'status-inactive'; ?>">
-                                                    <?php echo $camp_site['status'] ? 'Active' : 'Inactive'; ?>
-                                                </span>
-                                            </td>
-                                            <td class="d-none"><?php echo htmlspecialchars($camp_site['created_by']); ?></td>
-                                            <td class="action-buttons">
-                                                <button class="btn btn-sm btn-primary edit-camp-site" 
+                                            <tr>
+                                                <td><?php echo $camp_site['camp_site_id']; ?></td>
+                                                <td><?php echo htmlspecialchars($camp_site['camp_site_name']); ?></td>
+                                                <td><?php echo htmlspecialchars($camp_site['city_name']); ?></td>
+                                                <td>
+                                                    <span class="setup-type-badge <?php echo $setup_type_class; ?>">
+                                                        <?php echo htmlspecialchars($camp_site['setup_type']); ?>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="<?php echo $camp_site['status'] ? 'status-active' : 'status-inactive'; ?>">
+                                                        <?php echo $camp_site['status'] ? 'Active' : 'Inactive'; ?>
+                                                    </span>
+                                                </td>
+                                                <td class="d-none"><?php echo htmlspecialchars($camp_site['created_by']); ?></td>
+                                                <td class="action-buttons">
+                                                    <button class="btn btn-sm btn-primary edit-camp-site"
                                                         data-id="<?php echo $camp_site['camp_site_id']; ?>"
                                                         data-name="<?php echo htmlspecialchars($camp_site['camp_site_name']); ?>"
                                                         data-city-id="<?php echo $camp_site['city_id']; ?>"
                                                         data-setup-type="<?php echo htmlspecialchars($camp_site['setup_type']); ?>"
                                                         data-status="<?php echo $camp_site['status']; ?>">
-                                                    <i class="fas fa-edit"></i> Edit
-                                                </button>
-                                                <button class="btn btn-sm btn-danger delete-camp-site" 
+                                                        <i class="fas fa-edit"></i> Edit
+                                                    </button>
+                                                    <button class="btn btn-sm btn-danger delete-camp-site"
                                                         data-id="<?php echo $camp_site['camp_site_id']; ?>"
                                                         data-name="<?php echo htmlspecialchars($camp_site['camp_site_name']); ?>">
-                                                    <i class="fas fa-trash"></i> Delete
-                                                </button>
-                                            </td>
-                                        </tr>
+                                                        <i class="fas fa-trash"></i> Delete
+                                                    </button>
+                                                </td>
+                                            </tr>
                                         <?php endwhile; ?>
                                     </tbody>
                                 </table>
@@ -313,7 +313,7 @@ $camp_sites_result = $conn->query("
                             <label for="city_id">City *</label>
                             <select class="form-control" id="city_id" name="city_id" required>
                                 <option value="">Select City</option>
-                                <?php while($city = $cities_result->fetch_assoc()): ?>
+                                <?php while ($city = $cities_result->fetch_assoc()): ?>
                                     <option value="<?php echo $city['city_id']; ?>"><?php echo htmlspecialchars($city['city_name']); ?></option>
                                 <?php endwhile; ?>
                             </select>
@@ -366,10 +366,10 @@ $camp_sites_result = $conn->query("
                             <label for="edit_city_id">City *</label>
                             <select class="form-control" id="edit_city_id" name="city_id" required>
                                 <option value="">Select City</option>
-                                <?php 
+                                <?php
                                 // Reset cities result pointer
                                 $cities_result->data_seek(0);
-                                while($city = $cities_result->fetch_assoc()): ?>
+                                while ($city = $cities_result->fetch_assoc()): ?>
                                     <option value="<?php echo $city['city_id']; ?>"><?php echo htmlspecialchars($city['city_name']); ?></option>
                                 <?php endwhile; ?>
                             </select>
@@ -449,11 +449,16 @@ $camp_sites_result = $conn->query("
             // Initialize DataTable
             $('#campSitesTable').DataTable({
                 "pageLength": 10,
-                "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
-                "order": [[0, "desc"]],
+                "lengthMenu": [
+                    [10, 25, 50, -1],
+                    [10, 25, 50, "All"]
+                ],
+                "order": [
+                    [0, "desc"]
+                ],
                 "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
-                       '<"row"<"col-sm-12"tr>>' +
-                       '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+                    '<"row"<"col-sm-12"tr>>' +
+                    '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
                 "language": {
                     "emptyTable": "No camp sites found",
                     "info": "Showing _START_ to _END_ of _TOTAL_ camp sites",
@@ -470,7 +475,7 @@ $camp_sites_result = $conn->query("
                     }
                 }
             });
-            
+
             // Edit camp site button click
             $('.edit-camp-site').click(function() {
                 var campSiteId = $(this).data('id');
@@ -478,27 +483,27 @@ $camp_sites_result = $conn->query("
                 var cityId = $(this).data('city-id');
                 var setupType = $(this).data('setup-type');
                 var status = $(this).data('status');
-                
+
                 $('#edit_camp_site_id').val(campSiteId);
                 $('#edit_camp_site_name').val(campSiteName);
                 $('#edit_city_id').val(cityId);
                 $('#edit_setup_type').val(setupType);
                 $('#edit_status').prop('checked', status == 1);
-                
+
                 $('#editCampSiteModal').modal('show');
             });
-            
+
             // Delete camp site button click
             $('.delete-camp-site').click(function() {
                 var campSiteId = $(this).data('id');
                 var campSiteName = $(this).data('name');
-                
+
                 $('#delete_camp_site_name').text(campSiteName);
                 $('#confirm_delete').attr('href', 'camp_sites.php?delete_id=' + campSiteId);
-                
+
                 $('#deleteCampSiteModal').modal('show');
             });
-            
+
             // Auto-hide alerts after 5 seconds
             setTimeout(function() {
                 $('.alert').alert('close');
