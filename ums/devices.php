@@ -289,7 +289,7 @@ $devices_result = $conn->query("SELECT * FROM devices ORDER BY device_id DESC");
                                             <th>ID</th>
                                             <th>Device Name</th>
                                             <th>Status</th>
-                                            <th>Created By</th>
+                                            <th class="d-none">Created By</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -306,7 +306,7 @@ $devices_result = $conn->query("SELECT * FROM devices ORDER BY device_id DESC");
                                                     <?php echo $device['status'] ? 'Active' : 'Inactive'; ?>
                                                 </span>
                                             </td>
-                                            <td><?php echo htmlspecialchars($device['created_by']); ?></td>
+                                            <td class="d-none"><?php echo htmlspecialchars($device['created_by']); ?></td>
                                             <td class="action-buttons">
                                                 <button class="btn btn-sm btn-primary edit-device" 
                                                         data-id="<?php echo $device['device_id']; ?>"
