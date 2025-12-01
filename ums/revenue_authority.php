@@ -16,10 +16,10 @@ if (isset($_POST['add_authority'])) {
     $tax_percentage = $_POST['tax_percentage'];
     $is_active = isset($_POST['is_active']) ? 1 : 0;
     $created_by = $_SESSION['user_id'] ?? 1; // Default to admin user
-    
+
     $stmt = $conn->prepare("INSERT INTO revenue_authority (authority_name, tax_percentage, is_active, created_by) VALUES (?, ?, ?, ?)");
     $stmt->bind_param("sdii", $authority_name, $tax_percentage, $is_active, $created_by);
-    
+
     if ($stmt->execute()) {
         $_SESSION['message'] = "Revenue authority added successfully!";
         $_SESSION['message_type'] = "success";
@@ -28,7 +28,7 @@ if (isset($_POST['add_authority'])) {
         $_SESSION['message_type'] = "error";
     }
     $stmt->close();
-    
+
     // Redirect to prevent form resubmission
     header("Location: revenue_authority.php");
     exit();
@@ -41,10 +41,10 @@ if (isset($_POST['update_authority'])) {
     $tax_percentage = $_POST['tax_percentage'];
     $is_active = isset($_POST['is_active']) ? 1 : 0;
     $updated_by = $_SESSION['user_id'] ?? 1; // Default to admin user
-    
+
     $stmt = $conn->prepare("UPDATE revenue_authority SET authority_name = ?, tax_percentage = ?, is_active = ?, updated_by = ? WHERE id = ?");
     $stmt->bind_param("sdiii", $authority_name, $tax_percentage, $is_active, $updated_by, $id);
-    
+
     if ($stmt->execute()) {
         $_SESSION['message'] = "Revenue authority updated successfully!";
         $_SESSION['message_type'] = "success";
@@ -53,7 +53,7 @@ if (isset($_POST['update_authority'])) {
         $_SESSION['message_type'] = "error";
     }
     $stmt->close();
-    
+
     // Redirect to prevent form resubmission
     header("Location: revenue_authority.php");
     exit();
@@ -62,10 +62,10 @@ if (isset($_POST['update_authority'])) {
 // Delete revenue authority
 if (isset($_GET['delete_id'])) {
     $id = $_GET['delete_id'];
-    
+
     $stmt = $conn->prepare("DELETE FROM revenue_authority WHERE id = ?");
     $stmt->bind_param("i", $id);
-    
+
     if ($stmt->execute()) {
         $_SESSION['message'] = "Revenue authority deleted successfully!";
         $_SESSION['message_type'] = "success";
@@ -74,7 +74,7 @@ if (isset($_GET['delete_id'])) {
         $_SESSION['message_type'] = "error";
     }
     $stmt->close();
-    
+
     // Redirect to avoid resubmission
     header("Location: revenue_authority.php");
     exit();
@@ -109,67 +109,67 @@ $authorities_result = $conn->query("
     <!-- DataTables CSS -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.bootstrap4.min.css">
-    
+
     <!-- Custom styles for this template-->
     <link href="css/sb-admin-2.css" rel="stylesheet">
-    
+
     <style>
         .grad-nvb {
             background-image: linear-gradient(180deg, rgba(1, 47, 95, 1) -0.4%, rgba(56, 141, 217, 1) 106.1%);
             color: white;
         }
-        
+
         .status-active {
             color: #28a745;
             font-weight: bold;
         }
-        
+
         .status-inactive {
             color: #dc3545;
             font-weight: bold;
         }
-        
+
         .action-buttons .btn {
             margin-right: 5px;
         }
-        
+
         .alert-success {
             background-color: #d4edda;
             border-color: #c3e6cb;
             color: #155724;
         }
-        
+
         .alert-error {
             background-color: #f8d7da;
             border-color: #f5c6cb;
             color: #721c24;
         }
-        
+
         .tax-badge {
             font-size: 0.9em;
             padding: 4px 8px;
             border-radius: 12px;
             font-weight: bold;
         }
-        
+
         .tax-low {
             background-color: #e8f5e8;
             color: #2e7d32;
             border: 1px solid #2e7d32;
         }
-        
+
         .tax-medium {
             background-color: #fff3e0;
             color: #ef6c00;
             border: 1px solid #ef6c00;
         }
-        
+
         .tax-high {
             background-color: #ffebee;
             color: #c62828;
             border: 1px solid #c62828;
         }
-        
+
         .authority-icon {
             font-size: 1.2em;
             margin-right: 8px;
@@ -185,7 +185,7 @@ $authorities_result = $conn->query("
         <!-- Sidebar included here-->
         <?php include 'assets/include/sidebar.php'; ?>
         <!-- End of Sidebar -->
-        
+
         <!-- Content Wrapper -->
         <div id="content-wrapper" class="d-flex flex-column">
 
@@ -195,7 +195,7 @@ $authorities_result = $conn->query("
                 <!-- Topbar -->
                 <?php include 'assets/include/topbar.php'; ?>
                 <!-- End of Topbar -->
-                
+
                 <!-- Begin Page Content -->
                 <div class="container-fluid">
 
@@ -228,7 +228,7 @@ $authorities_result = $conn->query("
                                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                                 Total Authorities</div>
                                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                                <?php 
+                                                <?php
                                                 $total_auth = $conn->query("SELECT COUNT(*) as total FROM revenue_authority")->fetch_assoc()['total'];
                                                 echo $total_auth;
                                                 ?>
@@ -251,7 +251,7 @@ $authorities_result = $conn->query("
                                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                                 Active Authorities</div>
                                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                                <?php 
+                                                <?php
                                                 $active_auth = $conn->query("SELECT COUNT(*) as active FROM revenue_authority WHERE is_active = 1")->fetch_assoc()['active'];
                                                 echo $active_auth;
                                                 ?>
@@ -274,7 +274,7 @@ $authorities_result = $conn->query("
                                             <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
                                                 Avg. Tax Rate</div>
                                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                                <?php 
+                                                <?php
                                                 $avg_tax = $conn->query("SELECT AVG(tax_percentage) as avg_tax FROM revenue_authority WHERE is_active = 1")->fetch_assoc()['avg_tax'];
                                                 echo number_format($avg_tax ?? 0, 2) . '%';
                                                 ?>
@@ -297,7 +297,7 @@ $authorities_result = $conn->query("
                                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                                 Highest Tax Rate</div>
                                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                                <?php 
+                                                <?php
                                                 $max_tax = $conn->query("SELECT MAX(tax_percentage) as max_tax FROM revenue_authority WHERE is_active = 1")->fetch_assoc()['max_tax'];
                                                 echo number_format($max_tax ?? 0, 2) . '%';
                                                 ?>
@@ -333,7 +333,7 @@ $authorities_result = $conn->query("
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php while($authority = $authorities_result->fetch_assoc()): 
+                                        <?php while ($authority = $authorities_result->fetch_assoc()):
                                             // Determine tax badge class
                                             $tax_class = 'tax-medium';
                                             if ($authority['tax_percentage'] < 10) {
@@ -342,46 +342,46 @@ $authorities_result = $conn->query("
                                                 $tax_class = 'tax-high';
                                             }
                                         ?>
-                                        <tr>
-                                            <td><?php echo $authority['id']; ?></td>
-                                            <td>
-                                                <i class="fas fa-landmark authority-icon"></i>
-                                                <?php echo htmlspecialchars($authority['authority_name']); ?>
-                                            </td>
-                                            <td>
-                                                <span class="tax-badge <?php echo $tax_class; ?>">
-                                                    <?php echo number_format($authority['tax_percentage'], 2); ?>%
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span class="<?php echo $authority['is_active'] ? 'status-active' : 'status-inactive'; ?>">
-                                                    <?php echo $authority['is_active'] ? 'Active' : 'Inactive'; ?>
-                                                </span>
-                                            </td>
-                                            <td><?php echo htmlspecialchars($authority['created_by_name'] ?? 'System'); ?></td>
-                                            <td><?php echo date('M j, Y', strtotime($authority['created_at'])); ?></td>
-                                            <td>
-                                                <?php if($authority['updated_at']): ?>
-                                                    <?php echo date('M j, Y', strtotime($authority['updated_at'])); ?>
-                                                <?php else: ?>
-                                                    <span class="text-muted">Never</span>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td class="action-buttons">
-                                                <button class="btn btn-sm btn-primary edit-authority" 
+                                            <tr>
+                                                <td><?php echo $authority['id']; ?></td>
+                                                <td>
+                                                    <i class="fas fa-landmark authority-icon"></i>
+                                                    <?php echo htmlspecialchars($authority['authority_name']); ?>
+                                                </td>
+                                                <td>
+                                                    <span class="tax-badge <?php echo $tax_class; ?>">
+                                                        <?php echo number_format($authority['tax_percentage'], 2); ?>%
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="<?php echo $authority['is_active'] ? 'status-active' : 'status-inactive'; ?>">
+                                                        <?php echo $authority['is_active'] ? 'Active' : 'Inactive'; ?>
+                                                    </span>
+                                                </td>
+                                                <td><?php echo htmlspecialchars($authority['created_by_name'] ?? 'System'); ?></td>
+                                                <td><?php echo date('M j, Y', strtotime($authority['created_at'])); ?></td>
+                                                <td>
+                                                    <?php if ($authority['updated_at']): ?>
+                                                        <?php echo date('M j, Y', strtotime($authority['updated_at'])); ?>
+                                                    <?php else: ?>
+                                                        <span class="text-muted">Never</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td class="action-buttons">
+                                                    <button class="btn btn-sm btn-primary edit-authority"
                                                         data-id="<?php echo $authority['id']; ?>"
                                                         data-name="<?php echo htmlspecialchars($authority['authority_name']); ?>"
                                                         data-tax="<?php echo $authority['tax_percentage']; ?>"
                                                         data-active="<?php echo $authority['is_active']; ?>">
-                                                    <i class="fas fa-edit"></i> Edit
-                                                </button>
-                                                <button class="btn btn-sm btn-danger delete-authority" 
+                                                        <i class="fas fa-edit"></i> Edit
+                                                    </button>
+                                                    <button class="btn btn-sm btn-danger delete-authority"
                                                         data-id="<?php echo $authority['id']; ?>"
                                                         data-name="<?php echo htmlspecialchars($authority['authority_name']); ?>">
-                                                    <i class="fas fa-trash"></i> Delete
-                                                </button>
-                                            </td>
-                                        </tr>
+                                                        <i class="fas fa-trash"></i> Delete
+                                                    </button>
+                                                </td>
+                                            </tr>
                                         <?php endwhile; ?>
                                     </tbody>
                                 </table>
@@ -420,8 +420,8 @@ $authorities_result = $conn->query("
                         <div class="form-group">
                             <label for="tax_percentage">Tax Percentage *</label>
                             <div class="input-group">
-                                <input type="number" class="form-control" id="tax_percentage" name="tax_percentage" 
-                                       min="0" max="100" step="0.01" placeholder="Enter tax percentage" required>
+                                <input type="number" class="form-control" id="tax_percentage" name="tax_percentage"
+                                    min="0" max="100" step="0.01" placeholder="Enter tax percentage" required>
                                 <div class="input-group-append">
                                     <span class="input-group-text">%</span>
                                 </div>
@@ -466,8 +466,8 @@ $authorities_result = $conn->query("
                         <div class="form-group">
                             <label for="edit_tax_percentage">Tax Percentage *</label>
                             <div class="input-group">
-                                <input type="number" class="form-control" id="edit_tax_percentage" name="tax_percentage" 
-                                       min="0" max="100" step="0.01" required>
+                                <input type="number" class="form-control" id="edit_tax_percentage" name="tax_percentage"
+                                    min="0" max="100" step="0.01" required>
                                 <div class="input-group-append">
                                     <span class="input-group-text">%</span>
                                 </div>
@@ -539,11 +539,16 @@ $authorities_result = $conn->query("
             // Initialize DataTable
             $('#authoritiesTable').DataTable({
                 "pageLength": 10,
-                "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
-                "order": [[0, "desc"]],
+                "lengthMenu": [
+                    [10, 25, 50, -1],
+                    [10, 25, 50, "All"]
+                ],
+                "order": [
+                    [0, "desc"]
+                ],
                 "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
-                       '<"row"<"col-sm-12"tr>>' +
-                       '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+                    '<"row"<"col-sm-12"tr>>' +
+                    '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
                 "language": {
                     "emptyTable": "No revenue authorities found",
                     "info": "Showing _START_ to _END_ of _TOTAL_ authorities",
@@ -560,38 +565,38 @@ $authorities_result = $conn->query("
                     }
                 }
             });
-            
+
             // Edit authority button click
             $('.edit-authority').click(function() {
                 var authorityId = $(this).data('id');
                 var authorityName = $(this).data('name');
                 var taxPercentage = $(this).data('tax');
                 var isActive = $(this).data('active');
-                
+
                 $('#edit_authority_id').val(authorityId);
                 $('#edit_authority_name').val(authorityName);
                 $('#edit_tax_percentage').val(taxPercentage);
                 $('#edit_is_active').prop('checked', isActive == 1);
-                
+
                 $('#editAuthorityModal').modal('show');
             });
-            
+
             // Delete authority button click
             $('.delete-authority').click(function() {
                 var authorityId = $(this).data('id');
                 var authorityName = $(this).data('name');
-                
+
                 $('#delete_authority_name').text(authorityName);
                 $('#confirm_delete').attr('href', 'revenue_authority.php?delete_id=' + authorityId);
-                
+
                 $('#deleteAuthorityModal').modal('show');
             });
-            
+
             // Auto-hide alerts after 5 seconds
             setTimeout(function() {
                 $('.alert').alert('close');
             }, 5000);
-            
+
             // Validate tax percentage input
             $('#tax_percentage, #edit_tax_percentage').on('input', function() {
                 var value = parseFloat($(this).val());
