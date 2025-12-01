@@ -82,13 +82,8 @@ if (isset($_GET['delete_id'])) {
 
 // Fetch all revenue authorities for the table
 $authorities_result = $conn->query("
-    SELECT ra.*, 
-           u1.username as created_by_name,
-           u2.username as updated_by_name
-    FROM revenue_authority ra
-    LEFT JOIN users u1 ON ra.created_by = u1.id
-    LEFT JOIN users u2 ON ra.updated_by = u2.id
-    ORDER BY ra.id DESC
+    SELECT * FROM revenue_authority 
+    ORDER BY id DESC
 ");
 ?>
 <!DOCTYPE html>
