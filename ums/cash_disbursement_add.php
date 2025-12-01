@@ -20,10 +20,11 @@ if (isset($_POST['add_summary'])) {
     $total_transactions = $_POST['total_transactions'];
     $total_amount = $_POST['total_amount'];
     $created_by = $_SESSION['username'] ?? 'Admin';
-    
-    $stmt = $conn->prepare("INSERT INTO cash_disbursement_summary (transaction_date, city_id, camp_site_id, setup_fee_applied, setup_fee_type, total_transactions, total_amount, created_date, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)");
-    $stmt->bind_param("siissiis", $transaction_date, $city_id, $camp_site_id, $setup_fee_applied, $setup_fee_type, $total_transactions, $total_amount, $created_by);
-    
+    $customer_id = $_POST['customer_id'];
+    $authority_id = $_POST['authority_id'];
+
+    $stmt = $conn->prepare("INSERT INTO cash_disbursement_summary (transaction_date, city_id, camp_site_id, setup_fee_applied, setup_fee_type, total_transactions, total_amount, customer_id, authority_id, created_date, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)");
+    $stmt->bind_param("siissiiiss", $transaction_date, $city_id, $camp_site_id, $setup_fee_applied, $setup_fee_type, $total_transactions, $total_amount, $customer_id, $authority_id, $created_by);
     if ($stmt->execute()) {
         $_SESSION['message'] = "Cash disbursement summary added successfully!";
         $_SESSION['message_type'] = "success";
@@ -38,7 +39,9 @@ if (isset($_POST['add_summary'])) {
 
 // Fetch all cities and camp sites for dropdowns
 $cities_result = $conn->query("SELECT * FROM cities WHERE status = 1 ORDER BY city_name");
+$customers_result = $conn->query("SELECT * FROM customers WHERE status = 1 ORDER BY customer_name");
 $camp_sites_result = $conn->query("SELECT * FROM camp_sites WHERE status = 1 ORDER BY camp_site_name");
+$authorities_result = $conn->query("SELECT * FROM revenue_authority  WHERE is_active = 1 ORDER BY authority_name");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -59,28 +62,28 @@ $camp_sites_result = $conn->query("SELECT * FROM camp_sites WHERE status = 1 ORD
     <link
         href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
         rel="stylesheet">
-    
+
     <!-- Custom styles for this template-->
     <link href="css/sb-admin-2.css" rel="stylesheet">
-    
+
     <style>
         .grad-nvb {
             background-image: linear-gradient(180deg, rgba(1, 47, 95, 1) -0.4%, rgba(56, 141, 217, 1) 106.1%);
             color: white;
         }
-        
+
         .alert-success {
             background-color: #d4edda;
             border-color: #c3e6cb;
             color: #155724;
         }
-        
+
         .alert-error {
             background-color: #f8d7da;
             border-color: #f5c6cb;
             color: #721c24;
         }
-        
+
         .form-card {
             box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
             border: 1px solid #e3e6f0;
@@ -95,7 +98,7 @@ $camp_sites_result = $conn->query("SELECT * FROM camp_sites WHERE status = 1 ORD
         <!-- Sidebar included here-->
         <?php include 'assets/include/sidebar.php'; ?>
         <!-- End of Sidebar -->
-        
+
         <!-- Content Wrapper -->
         <div id="content-wrapper" class="d-flex flex-column">
 
@@ -105,7 +108,7 @@ $camp_sites_result = $conn->query("SELECT * FROM camp_sites WHERE status = 1 ORD
                 <!-- Topbar -->
                 <?php include 'assets/include/topbar.php'; ?>
                 <!-- End of Topbar -->
-                
+
                 <!-- Begin Page Content -->
                 <div class="container-fluid">
 
@@ -146,21 +149,21 @@ $camp_sites_result = $conn->query("SELECT * FROM camp_sites WHERE status = 1 ORD
                                             <label for="city_id">City *</label>
                                             <select class="form-control" id="city_id" name="city_id" required>
                                                 <option value="">Select City</option>
-                                                <?php while($city = $cities_result->fetch_assoc()): ?>
+                                                <?php while ($city = $cities_result->fetch_assoc()): ?>
                                                     <option value="<?php echo $city['city_id']; ?>"><?php echo htmlspecialchars($city['city_name']); ?></option>
                                                 <?php endwhile; ?>
                                             </select>
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="camp_site_id">Camp Site *</label>
                                             <select class="form-control" id="camp_site_id" name="camp_site_id" required>
                                                 <option value="">Select Camp Site</option>
-                                                <?php while($camp_site = $camp_sites_result->fetch_assoc()): ?>
+                                                <?php while ($camp_site = $camp_sites_result->fetch_assoc()): ?>
                                                     <option value="<?php echo $camp_site['camp_site_id']; ?>"><?php echo htmlspecialchars($camp_site['camp_site_name']); ?></option>
                                                 <?php endwhile; ?>
                                             </select>
@@ -177,7 +180,7 @@ $camp_sites_result = $conn->query("SELECT * FROM camp_sites WHERE status = 1 ORD
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
@@ -197,16 +200,41 @@ $camp_sites_result = $conn->query("SELECT * FROM camp_sites WHERE status = 1 ORD
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="row">
-                                    <div class="col-md-12">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="city_id">Customer *</label>
+                                            <select class="form-control" id="customer_id" name="customer_id" required>
+                                                <option value="">Select Customer</option>
+                                                <?php while ($customers = $customers_result->fetch_assoc()): ?>
+                                                    <option value="<?php echo $customers['customer_id']; ?>"><?php echo htmlspecialchars($customers['customer_name']); ?></option>
+                                                <?php endwhile; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+
+
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="city_id">Revenue Authority *</label>
+                                            <select class="form-control" id="authority_id" name="authority_id" required>
+                                                <option value="">Select City</option>
+                                                <?php while ($authority = $authorities_result->fetch_assoc()): ?>
+                                                    <option value="<?php echo $authority['id']; ?>"><?php echo htmlspecialchars($authority['authority_name']); ?></option>
+                                                <?php endwhile; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="total_amount">Total Amount (PKR) *</label>
                                             <input type="number" class="form-control" id="total_amount" name="total_amount" min="0" step="0.01" required>
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="row">
                                     <div class="col-md-12">
                                         <button type="submit" name="add_summary" class="btn btn-primary btn-lg">
@@ -256,11 +284,11 @@ $camp_sites_result = $conn->query("SELECT * FROM camp_sites WHERE status = 1 ORD
             setTimeout(function() {
                 $('.alert').alert('close');
             }, 5000);
-            
+
             // Set current datetime as default
             var now = new Date();
             now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-            document.getElementById('transaction_date').value = now.toISOString().slice(0,16);
+            document.getElementById('transaction_date').value = now.toISOString().slice(0, 16);
         });
     </script>
 

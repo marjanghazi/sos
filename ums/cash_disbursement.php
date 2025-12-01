@@ -33,7 +33,7 @@ if (isset($_GET['delete_id'])) {
 
 // Fetch all cash disbursement summaries for the table with related data
 $summaries_result = $conn->query("
-    SELECT cds.*, c.city_name, cs.camp_site_name 
+    SELECT cds.*, c.city_name, cs.camp_site_name, cds.customer_name, cds.revenue_authority_name
     FROM cash_disbursement_summary cds 
     LEFT JOIN cities c ON cds.city_id = c.city_id 
     LEFT JOIN camp_sites cs ON cds.camp_site_id = cs.camp_site_id 
@@ -184,6 +184,8 @@ $summaries_result = $conn->query("
                                             <th>Fee Type</th>
                                             <th>Transactions</th>
                                             <th>Total Amount</th>
+                                            <th>Customer</th>
+                                            <th>Revenue Authority</th>
                                             <th>Created Date</th>
                                             <th>Actions</th>
                                         </tr>
@@ -214,6 +216,8 @@ $summaries_result = $conn->query("
                                                     PKR <?php echo number_format($summary['total_amount']); ?>
                                                 </span>
                                             </td>
+                                            <td><?php echo htmlspecialchars($summary['customer_name']); ?></td>
+                                            <td><?php echo htmlspecialchars($summary['revenue_authority_name']); ?></td>
                                             <td><?php echo date('M j, Y', strtotime($summary['created_date'])); ?></td>
                                             <td class="action-buttons">
                                                 <a href="cash_disbursement_edit.php?id=<?php echo $summary['summary_id']; ?>" class="btn btn-sm btn-primary">
