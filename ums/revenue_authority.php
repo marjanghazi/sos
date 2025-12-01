@@ -326,9 +326,9 @@ $authorities_result = $conn->query("
                                             <th>Authority Name</th>
                                             <th>Tax Percentage</th>
                                             <th>Status</th>
-                                            <th>Created By</th>
-                                            <th>Created At</th>
-                                            <th>Last Updated</th>
+                                            <th class="d-none">Created By</th>
+                                            <th class="d-none">Created At</th>
+                                            <th class="d-none">Last Updated</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -358,9 +358,9 @@ $authorities_result = $conn->query("
                                                         <?php echo $authority['is_active'] ? 'Active' : 'Inactive'; ?>
                                                     </span>
                                                 </td>
-                                                <td><?php echo htmlspecialchars($authority['created_by_name'] ?? 'System'); ?></td>
-                                                <td><?php echo date('M j, Y', strtotime($authority['created_at'])); ?></td>
-                                                <td>
+                                                <td class="d-none"><?php echo htmlspecialchars($authority['created_by_name'] ?? 'System'); ?></td>
+                                                <td class="d-none"><?php echo date('M j, Y', strtotime($authority['created_at'])); ?></td>
+                                                <td class="d-none">
                                                     <?php if ($authority['updated_at']): ?>
                                                         <?php echo date('M j, Y', strtotime($authority['updated_at'])); ?>
                                                     <?php else: ?>
