@@ -13,10 +13,10 @@ unset($_SESSION['message_type']);
 // Delete cash disbursement summary
 if (isset($_GET['delete_id'])) {
     $summary_id = $_GET['delete_id'];
-    
+
     $stmt = $conn->prepare("DELETE FROM cash_disbursement_summary WHERE summary_id = ?");
     $stmt->bind_param("i", $summary_id);
-    
+
     if ($stmt->execute()) {
         $_SESSION['message'] = "Cash disbursement summary deleted successfully!";
         $_SESSION['message_type'] = "success";
@@ -25,7 +25,7 @@ if (isset($_GET['delete_id'])) {
         $_SESSION['message_type'] = "error";
     }
     $stmt->close();
-    
+
     // Redirect to avoid resubmission
     header("Location: cash_disbursement.php");
     exit();
@@ -33,10 +33,17 @@ if (isset($_GET['delete_id'])) {
 
 // Fetch all cash disbursement summaries for the table with related data
 $summaries_result = $conn->query("
-    SELECT cds.*, c.city_name, cs.camp_site_name, cds.customer_name, cds.revenue_authority_name
+    SELECT 
+        cds.*, 
+        c.city_name, 
+        cs.camp_site_name, 
+        cust.customer_name,
+        ra.authority_name
     FROM cash_disbursement_summary cds 
     LEFT JOIN cities c ON cds.city_id = c.city_id 
     LEFT JOIN camp_sites cs ON cds.camp_site_id = cs.camp_site_id 
+    LEFT JOIN customers cust ON cds.customer_id = cust.customer_id
+    LEFT JOIN revenue_authority ra ON cds.authority_id = ra.id
     ORDER BY cds.summary_id DESC
 ");
 ?>
@@ -62,63 +69,63 @@ $summaries_result = $conn->query("
 
     <!-- DataTables CSS -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap4.min.css">
-    
+
     <!-- Custom styles for this template-->
     <link href="css/sb-admin-2.css" rel="stylesheet">
-    
+
     <style>
         .grad-nvb {
             background-image: linear-gradient(180deg, rgba(1, 47, 95, 1) -0.4%, rgba(56, 141, 217, 1) 106.1%);
             color: white;
         }
-        
+
         .action-buttons .btn {
             margin-right: 5px;
         }
-        
+
         .alert-success {
             background-color: #d4edda;
             border-color: #c3e6cb;
             color: #155724;
         }
-        
+
         .alert-error {
             background-color: #f8d7da;
             border-color: #f5c6cb;
             color: #721c24;
         }
-        
+
         .amount-badge {
             font-size: 0.9em;
             padding: 4px 8px;
             border-radius: 12px;
             font-weight: bold;
         }
-        
+
         .amount-positive {
             background-color: #e8f5e8;
             color: #2e7d32;
             border: 1px solid #2e7d32;
         }
-        
+
         .setup-fee-badge {
             font-size: 0.8em;
             padding: 3px 6px;
             border-radius: 8px;
         }
-        
+
         .setup-fee-yes {
             background-color: #fff3e0;
             color: #ef6c00;
             border: 1px solid #ef6c00;
         }
-        
+
         .setup-fee-no {
             background-color: #e8f5e8;
             color: #2e7d32;
             border: 1px solid #2e7d32;
         }
-        
+
         .transaction-icon {
             font-size: 1.2em;
             margin-right: 8px;
@@ -134,7 +141,7 @@ $summaries_result = $conn->query("
         <!-- Sidebar included here-->
         <?php include 'assets/include/sidebar.php'; ?>
         <!-- End of Sidebar -->
-        
+
         <!-- Content Wrapper -->
         <div id="content-wrapper" class="d-flex flex-column">
 
@@ -144,7 +151,7 @@ $summaries_result = $conn->query("
                 <!-- Topbar -->
                 <?php include 'assets/include/topbar.php'; ?>
                 <!-- End of Topbar -->
-                
+
                 <!-- Begin Page Content -->
                 <div class="container-fluid">
 
@@ -191,45 +198,45 @@ $summaries_result = $conn->query("
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php while($summary = $summaries_result->fetch_assoc()): ?>
-                                        <tr>
-                                            <td><?php echo $summary['summary_id']; ?></td>
-                                            <td>
-                                                <i class="fas fa-calendar transaction-icon"></i>
-                                                <?php echo date('M j, Y', strtotime($summary['transaction_date'])); ?>
-                                            </td>
-                                            <td><?php echo htmlspecialchars($summary['city_name'] ?? 'N/A'); ?></td>
-                                            <td><?php echo htmlspecialchars($summary['camp_site_name'] ?? 'N/A'); ?></td>
-                                            <td>
-                                                <span class="setup-fee-badge <?php echo $summary['setup_fee_applied'] == 'Yes' ? 'setup-fee-yes' : 'setup-fee-no'; ?>">
-                                                    <?php echo htmlspecialchars($summary['setup_fee_applied']); ?>
-                                                </span>
-                                            </td>
-                                            <td><?php echo htmlspecialchars($summary['setup_fee_type']); ?></td>
-                                            <td>
-                                                <span class="amount-badge">
-                                                    <?php echo number_format($summary['total_transactions']); ?>
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span class="amount-badge amount-positive">
-                                                    PKR <?php echo number_format($summary['total_amount']); ?>
-                                                </span>
-                                            </td>
-                                            <td><?php echo htmlspecialchars($summary['customer_name']); ?></td>
-                                            <td><?php echo htmlspecialchars($summary['revenue_authority_name']); ?></td>
-                                            <td><?php echo date('M j, Y', strtotime($summary['created_date'])); ?></td>
-                                            <td class="action-buttons">
-                                                <a href="cash_disbursement_edit.php?id=<?php echo $summary['summary_id']; ?>" class="btn btn-sm btn-primary">
-                                                    <i class="fas fa-edit"></i> Edit
-                                                </a>
-                                                <button class="btn btn-sm btn-danger delete-summary" 
+                                        <?php while ($summary = $summaries_result->fetch_assoc()): ?>
+                                            <tr>
+                                                <td><?php echo $summary['summary_id']; ?></td>
+                                                <td>
+                                                    <i class="fas fa-calendar transaction-icon"></i>
+                                                    <?php echo date('M j, Y', strtotime($summary['transaction_date'])); ?>
+                                                </td>
+                                                <td><?php echo htmlspecialchars($summary['city_name'] ?? 'N/A'); ?></td>
+                                                <td><?php echo htmlspecialchars($summary['camp_site_name'] ?? 'N/A'); ?></td>
+                                                <td>
+                                                    <span class="setup-fee-badge <?php echo $summary['setup_fee_applied'] == 'Yes' ? 'setup-fee-yes' : 'setup-fee-no'; ?>">
+                                                        <?php echo htmlspecialchars($summary['setup_fee_applied']); ?>
+                                                    </span>
+                                                </td>
+                                                <td><?php echo htmlspecialchars($summary['setup_fee_type']); ?></td>
+                                                <td>
+                                                    <span class="amount-badge">
+                                                        <?php echo number_format($summary['total_transactions']); ?>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="amount-badge amount-positive">
+                                                        PKR <?php echo number_format($summary['total_amount']); ?>
+                                                    </span>
+                                                </td>
+                                                <td><?php echo htmlspecialchars($summary['customer_name']); ?></td>
+                                                <td><?php echo htmlspecialchars($summary['authority_name']); ?></td>
+                                                <td><?php echo date('M j, Y', strtotime($summary['created_date'])); ?></td>
+                                                <td class="action-buttons">
+                                                    <a href="cash_disbursement_edit.php?id=<?php echo $summary['summary_id']; ?>" class="btn btn-sm btn-primary">
+                                                        <i class="fas fa-edit"></i> Edit
+                                                    </a>
+                                                    <button class="btn btn-sm btn-danger delete-summary"
                                                         data-id="<?php echo $summary['summary_id']; ?>"
                                                         data-date="<?php echo date('M j, Y', strtotime($summary['transaction_date'])); ?>">
-                                                    <i class="fas fa-trash"></i> Delete
-                                                </button>
-                                            </td>
-                                        </tr>
+                                                        <i class="fas fa-trash"></i> Delete
+                                                    </button>
+                                                </td>
+                                            </tr>
                                         <?php endwhile; ?>
                                     </tbody>
                                 </table>
@@ -297,11 +304,16 @@ $summaries_result = $conn->query("
             // Initialize DataTable
             $('#summariesTable').DataTable({
                 "pageLength": 10,
-                "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
-                "order": [[0, "desc"]],
+                "lengthMenu": [
+                    [10, 25, 50, -1],
+                    [10, 25, 50, "All"]
+                ],
+                "order": [
+                    [0, "desc"]
+                ],
                 "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
-                       '<"row"<"col-sm-12"tr>>' +
-                       '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+                    '<"row"<"col-sm-12"tr>>' +
+                    '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
                 "language": {
                     "emptyTable": "No cash disbursement summaries found",
                     "info": "Showing _START_ to _END_ of _TOTAL_ summaries",
@@ -318,18 +330,18 @@ $summaries_result = $conn->query("
                     }
                 }
             });
-            
+
             // Delete summary button click
             $('.delete-summary').click(function() {
                 var summaryId = $(this).data('id');
                 var summaryDate = $(this).data('date');
-                
+
                 $('#delete_summary_date').text(summaryDate);
                 $('#confirm_delete').attr('href', 'cash_disbursement.php?delete_id=' + summaryId);
-                
+
                 $('#deleteSummaryModal').modal('show');
             });
-            
+
             // Auto-hide alerts after 5 seconds
             setTimeout(function() {
                 $('.alert').alert('close');
