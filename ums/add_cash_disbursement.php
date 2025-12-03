@@ -503,13 +503,8 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : ($summary_id > 0 ? 'details' 
                                         <div class="row">
                                             <div class="col-md-12">
                                                 <button type="submit" name="add_summary" class="btn btn-primary btn-lg">
-                                                    <i class="fas fa-save"></i> <?php echo $summary_id > 0 ? 'Update Summary' : 'Add Summary'; ?>
+                                                    <i class="fas fa-save"></i> <?php echo  'Add Summary'; ?>
                                                 </button>
-                                                <?php if ($summary_id > 0): ?>
-                                                    <a href="cash_disbursement_add.php?tab=details" class="btn btn-success btn-lg">
-                                                        <i class="fas fa-arrow-right"></i> Go to Details
-                                                    </a>
-                                                <?php endif; ?>
                                                 <a href="cash_disbursement.php" class="btn btn-secondary btn-lg">
                                                     <i class="fas fa-times"></i> Cancel
                                                 </a>
