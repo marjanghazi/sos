@@ -16,45 +16,36 @@ $details_data = [];
 
 // Add new cash disbursement summary
 if (isset($_POST['add_summary'])) {
-    // Sanitize and validate inputs
-    $transaction_date = filter_input(INPUT_POST, 'transaction_date', FILTER_SANITIZE_STRING);
-    $city_id = filter_input(INPUT_POST, 'city_id', FILTER_VALIDATE_INT);
-    $camp_site_id = filter_input(INPUT_POST, 'camp_site_id', FILTER_VALIDATE_INT);
-    $setup_fee_applied = filter_input(INPUT_POST, 'setup_fee_applied', FILTER_SANITIZE_STRING);
-    $setup_fee_type = filter_input(INPUT_POST, 'setup_fee_type', FILTER_SANITIZE_STRING);
-    $total_transactions = filter_input(INPUT_POST, 'total_transactions', FILTER_VALIDATE_INT);
-    $total_amount = filter_input(INPUT_POST, 'total_amount', FILTER_VALIDATE_FLOAT);
+    // Get inputs directly without validation
+    $transaction_date = $_POST['transaction_date'] ?? '';
+    $city_id = $_POST['city_id'] ?? 0;
+    $camp_site_id = $_POST['camp_site_id'] ?? 0;
+    $setup_fee_applied = $_POST['setup_fee_applied'] ?? '';
+    $setup_fee_type = $_POST['setup_fee_type'] ?? '';
+    $total_transactions = $_POST['total_transactions'] ?? 0;
+    $total_amount = $_POST['total_amount'] ?? 0;
     $created_by = $_SESSION['username'] ?? 'Admin';
-    $customer_id = filter_input(INPUT_POST, 'customer_id', FILTER_VALIDATE_INT);
-    $authority_id = filter_input(INPUT_POST, 'authority_id', FILTER_VALIDATE_INT);
+    $customer_id = $_POST['customer_id'] ?? 0;
+    $authority_id = $_POST['authority_id'] ?? 0;
 
-    // Validate required fields
-    if (
-        !$transaction_date || !$city_id || !$camp_site_id || !$setup_fee_applied ||
-        $total_transactions === false || $total_amount === false || !$customer_id || !$authority_id
-    ) {
-        $message = "Please fill all required fields correctly";
-        $message_type = "error";
+    // Insert new summary without validation
+    $stmt = $conn->prepare("INSERT INTO cash_disbursement_summary (transaction_date, city_id, camp_site_id, setup_fee_applied, setup_fee_type, total_transactions, total_amount, customer_id, authority_id, created_date, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)");
+    $stmt->bind_param("siissdiiss", $transaction_date, $city_id, $camp_site_id, $setup_fee_applied, $setup_fee_type, $total_transactions, $total_amount, $customer_id, $authority_id, $created_by);
+
+    if ($stmt->execute()) {
+        $summary_id = (int)$stmt->insert_id;
+        $_SESSION['message'] = "Cash disbursement summary added successfully!";
+        $_SESSION['message_type'] = "success";
+        $_SESSION['current_summary_id'] = $summary_id;
+
+        // Redirect to details tab after adding summary
+        header("Location: add_cash_disbursement.php?tab=details");
+        exit();
     } else {
-        // Insert new summary
-        $stmt = $conn->prepare("INSERT INTO cash_disbursement_summary (transaction_date, city_id, camp_site_id, setup_fee_applied, setup_fee_type, total_transactions, total_amount, customer_id, authority_id, created_date, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)");
-        $stmt->bind_param("siissdiiss", $transaction_date, $city_id, $camp_site_id, $setup_fee_applied, $setup_fee_type, $total_transactions, $total_amount, $customer_id, $authority_id, $created_by);
-
-        if ($stmt->execute()) {
-            $summary_id = (int)$stmt->insert_id;
-            $_SESSION['message'] = "Cash disbursement summary added successfully!";
-            $_SESSION['message_type'] = "success";
-            $_SESSION['current_summary_id'] = $summary_id;
-
-            // Redirect to details tab after adding summary
-            header("Location: add_cash_disbursement.php?tab=details");
-            exit();
-        } else {
-            $message = "Error: " . $stmt->error;
-            $message_type = "error";
-        }
-        $stmt->close();
+        $message = "Error: " . $stmt->error;
+        $message_type = "error";
     }
+    $stmt->close();
 }
 
 // Check if we have a summary ID in session
@@ -73,49 +64,44 @@ if ($summary_id > 0) {
 
 // Add new detail entry
 if (isset($_POST['add_detail'])) {
-    // Sanitize and validate inputs
-    $device_id = filter_input(INPUT_POST, 'device_id', FILTER_VALIDATE_INT);
-    $agent_id = filter_input(INPUT_POST, 'agent_id', FILTER_VALIDATE_INT);
-    $person_name = filter_input(INPUT_POST, 'person_name', FILTER_SANITIZE_STRING);
-    $cit_shipment_ref = filter_input(INPUT_POST, 'cit_shipment_ref', FILTER_SANITIZE_STRING);
-    $num_transactions = filter_input(INPUT_POST, 'num_transactions', FILTER_VALIDATE_INT);
-    $total_trans_amount = filter_input(INPUT_POST, 'total_trans_amount', FILTER_VALIDATE_FLOAT);
-    $detail_transaction_date = filter_input(INPUT_POST, 'detail_transaction_date', FILTER_SANITIZE_STRING);
+    // Get inputs directly without validation
+    $device_id = $_POST['device_id'] ?? 0;
+    $agent_id = $_POST['agent_id'] ?? 0;
+    $person_name = $_POST['person_name'] ?? '';
+    $cit_shipment_ref = $_POST['cit_shipment_ref'] ?? '';
+    $num_transactions = $_POST['num_transactions'] ?? 0;
+    $total_trans_amount = $_POST['total_trans_amount'] ?? 0;
+    $detail_transaction_date = $_POST['detail_transaction_date'] ?? '';
     $created_by = $_SESSION['username'] ?? 'Admin';
 
-    // Validate required fields
-    if (!$device_id || !$agent_id || !$num_transactions || !$total_trans_amount || !$detail_transaction_date) {
-        $message = "Please fill all required fields correctly";
-        $message_type = "error";
+    // Insert detail without validation
+    $stmt = $conn->prepare("INSERT INTO cash_disbursement_details (summary_id, device_id, agent_id, person_name, cit_shipment_ref, num_transactions, total_trans_amount, transaction_date, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("iiissdiss", $summary_id, $device_id, $agent_id, $person_name, $cit_shipment_ref, $num_transactions, $total_trans_amount, $detail_transaction_date, $created_by);
+
+    if ($stmt->execute()) {
+        // Update summary totals
+        $update_stmt = $conn->prepare("UPDATE cash_disbursement_summary SET 
+            total_transactions = total_transactions + ?,
+            total_amount = total_amount + ?
+            WHERE summary_id = ?");
+        $update_stmt->bind_param("ddi", $num_transactions, $total_trans_amount, $summary_id);
+        $update_stmt->execute();
+        $update_stmt->close();
+
+        $_SESSION['message'] = "Transaction detail added successfully!";
+        $_SESSION['message_type'] = "success";
+        header("Location: add_cash_disbursement.php?tab=details");
+        exit();
     } else {
-        $stmt = $conn->prepare("INSERT INTO cash_disbursement_details (summary_id, device_id, agent_id, person_name, cit_shipment_ref, num_transactions, total_trans_amount, transaction_date, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("iiissdiss", $summary_id, $device_id, $agent_id, $person_name, $cit_shipment_ref, $num_transactions, $total_trans_amount, $detail_transaction_date, $created_by);
-
-        if ($stmt->execute()) {
-            // Update summary totals
-            $update_stmt = $conn->prepare("UPDATE cash_disbursement_summary SET 
-                total_transactions = total_transactions + ?,
-                total_amount = total_amount + ?
-                WHERE summary_id = ?");
-            $update_stmt->bind_param("ddi", $num_transactions, $total_trans_amount, $summary_id);
-            $update_stmt->execute();
-            $update_stmt->close();
-
-            $_SESSION['message'] = "Transaction detail added successfully!";
-            $_SESSION['message_type'] = "success";
-            header("Location: add_cash_disbursement.php?tab=details");
-            exit();
-        } else {
-            $message = "Error adding transaction detail: " . $stmt->error;
-            $message_type = "error";
-        }
-        $stmt->close();
+        $message = "Error adding transaction detail: " . $stmt->error;
+        $message_type = "error";
     }
+    $stmt->close();
 }
 
 // Delete detail entry
 if (isset($_GET['delete_detail'])) {
-    $detail_id = filter_input(INPUT_GET, 'delete_detail', FILTER_VALIDATE_INT);
+    $detail_id = $_GET['delete_detail'] ?? 0;
 
     if ($detail_id) {
         // Get detail amount before deleting
@@ -404,7 +390,6 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'summary';
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <h1 class="h3 mb-0 text-gray-800">
                             Add Cash Disbursement
-                            <span class="addition-badge">ADDITION ONLY</span>
                         </h1>
                         <div>
                             <a href="add_cash_disbursement.php?reset" class="d-sm-inline-block btn btn-sm btn-warning shadow-sm" onclick="return confirm('Are you sure you want to start a new entry? Any unsaved data will be lost.')">
@@ -1027,10 +1012,10 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'summary';
             });
 
             // Disable summary form fields if summary already saved
-            <?php if ($summary_id > 0): ?>
-                $('#summaryForm input, #summaryForm select').not('button').prop('disabled', true);
-                $('#summaryForm input[readonly]').addClass('readonly-field');
-            <?php endif; ?>
+            // <?php if ($summary_id > 0): ?>
+            //     $('#summaryForm input, #summaryForm select').not('button').prop('disabled', true);
+            //     $('#summaryForm input[readonly]').addClass('readonly-field');
+            // <?php endif; ?>
         });
 
         // Function to navigate to statistics tab
