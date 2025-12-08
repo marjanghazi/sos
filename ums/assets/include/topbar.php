@@ -38,7 +38,7 @@
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <strong class="mr-2 d-none d-lg-inline"><?php echo $_SESSION['name']; ?></strong>
+                                <strong class="mr-2 d-none d-lg-inline">Admin</strong>
                                 <img class="img-profile rounded-circle"
                                     src="img/undraw_profile.svg">
                             </a>
