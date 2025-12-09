@@ -41,9 +41,11 @@ if (isset($_POST['update_customer'])) {
     $customer_contact = $_POST['customer_contact'];
     $revenue_auth = $_POST['revenue_auth'];
     $status = isset($_POST['status']) ? 1 : 0;
-
-    $stmt = $conn->prepare("UPDATE customers SET customer_name = ?, customer_code=?, contact=?, address=?, revenue_auth = ?, status = ? WHERE customer_id = ?");
-    $stmt->bind_param("sisii", $customer_name, $customer_code, $customer_contact, $customer_address, $revenue_auth, $status, $customer_id);
+    
+    $stmt = $conn->prepare("UPDATE customers SET customer_name = ?, customer_code = ?, contact = ?, address = ?, revenue_auth = ?, status = ? WHERE customer_id = ?");
+    
+    // Most likely this should be (if customer_code is string):
+    $stmt->bind_param("sssssii", $customer_name, $customer_code, $customer_contact, $customer_address, $revenue_auth, $status, $customer_id);
 
     if ($stmt->execute()) {
         $message = "Customer updated successfully!";
@@ -54,7 +56,6 @@ if (isset($_POST['update_customer'])) {
     }
     $stmt->close();
 }
-
 // Delete customer
 if (isset($_GET['delete_id'])) {
     $customer_id = $_GET['delete_id'];
@@ -270,7 +271,10 @@ $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id D
                                                 <td class="action-buttons">
                                                     <button class="btn btn-sm btn-primary edit-customer"
                                                         data-id="<?php echo $customer['customer_id']; ?>"
+                                                        data-code="<?php echo htmlspecialchars($customer['customer_code']); ?>"
                                                         data-name="<?php echo htmlspecialchars($customer['customer_name']); ?>"
+                                                        data-contact="<?php echo htmlspecialchars($customer['contact']); ?>"
+                                                        data-address="<?php echo htmlspecialchars($customer['address']); ?>"
                                                         data-revenue-auth="<?php echo htmlspecialchars($customer['revenue_auth']); ?>"
                                                         data-status="<?php echo $customer['status']; ?>">
                                                         <i class="fas fa-edit"></i> Edit
@@ -491,25 +495,24 @@ $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id D
 
             // Edit customer button click
             $('.edit-customer').click(function() {
-                var customer_code = $(this).data('customer_code');
                 var customerId = $(this).data('id');
+                var customerCode = $(this).data('code');
                 var customerName = $(this).data('name');
-                var customer_address = $(this).data('customer_address');
-                var customer_contact = $(this).data('customer_contact');
+                var customerContact = $(this).data('contact');
+                var customerAddress = $(this).data('address');
                 var revenueAuth = $(this).data('revenue-auth');
                 var status = $(this).data('status');
 
                 $('#edit_customer_id').val(customerId);
-                $('#edit_customer_code').val(customer_code)
+                $('#edit_customer_code').val(customerCode);
                 $('#edit_customer_name').val(customerName);
-                $('#edit_customer_address').val(customer_address);
-                $('#edit_customer_contact').val(customer_contact);
+                $('#edit_customer_contact').val(customerContact);
+                $('#edit_customer_address').val(customerAddress);
                 $('#edit_revenue_auth').val(revenueAuth);
                 $('#edit_status').prop('checked', status == 1);
 
                 $('#editCustomerModal').modal('show');
             });
-
             // Delete customer button click
             $('.delete-customer').click(function() {
                 var customerId = $(this).data('id');
