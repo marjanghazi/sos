@@ -214,7 +214,10 @@ $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id D
                                     <thead>
                                         <tr>
                                             <th>ID</th>
+                                            <th>Customer Code</th>
                                             <th>Customer Name</th>
+                                            <th>Customer Contact</th>
+                                            <th>Customer Address</th>
                                             <th>Revenue Authorization</th>
                                             <th>Status</th>
                                             <th class="d-none">Created By</th>
@@ -243,7 +246,10 @@ $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id D
                                         ?>
                                             <tr>
                                                 <td><?php echo $customer['customer_id']; ?></td>
+                                                <td><?php echo htmlspecialchars ($customer['customer_code'] )?></td>
                                                 <td><?php echo htmlspecialchars($customer['customer_name']); ?></td>
+                                                <td><?php echo $customer['contact'] ?></td>
+                                                <td><?php echo $customer['address']; ?></td>
                                                 <td>
                                                     <span class="revenue-auth-badge <?php echo $revenue_auth_class; ?>">
                                                         <?php echo htmlspecialchars($customer['revenue_auth']); ?>
