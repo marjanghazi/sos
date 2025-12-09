@@ -43,8 +43,6 @@ if (isset($_POST['update_customer'])) {
     $status = isset($_POST['status']) ? 1 : 0;
 
     $stmt = $conn->prepare("UPDATE customers SET customer_name = ?, customer_code = ?, contact = ?, address = ?, revenue_auth = ?, status = ? WHERE customer_id = ?");
-
-    // Most likely this should be (if customer_code is string):
     $stmt->bind_param("sssssii", $customer_name, $customer_code, $customer_contact, $customer_address, $revenue_auth, $status, $customer_id);
 
     if ($stmt->execute()) {
