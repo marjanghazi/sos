@@ -17,7 +17,7 @@ if (isset($_POST['add_customer'])) {
     $created_by = $_SESSION['username'] ?? 'Admin';
 
     $stmt = $conn->prepare("INSERT INTO customers (customer_name, customer_code, contact, address, revenue_auth, status, created_by) VALUES (?, ?, ?, ?,?, ?, ?)");
-    $stmt->bind_param("sisssis", $customer_name, $customer_code, $contact, $address, $revenue_auth, $status, $created_by);
+    $stmt->bind_param("sssssis", $customer_name, $customer_code, $contact, $address, $revenue_auth, $status, $created_by);
 
     if ($stmt->execute()) {
         $message = "Customer added successfully!";
@@ -319,7 +319,7 @@ $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id D
                     <div class="modal-body">
                         <div class="form-group">
                             <label for="customer_name">Customer Code *</label>
-                            <input type="number" class="form-control" id="customer_code" name="customer_code" required>
+                            <input type="text" class="form-control" id="customer_code" name="customer_code" required>
                         </div>
                         <div class="form-group">
                             <label for="customer_name">Customer Name *</label>
