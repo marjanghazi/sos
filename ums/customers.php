@@ -34,13 +34,16 @@ if (isset($_POST['add_customer'])) {
 
 // Update customer
 if (isset($_POST['update_customer'])) {
+    $customer_code = $_POST['customer_code'];
     $customer_id = $_POST['customer_id'];
     $customer_name = $_POST['customer_name'];
+    $customer_address = $_POST['customer_address'];
+    $customer_contact = $_POST['customer_contact'];
     $revenue_auth = $_POST['revenue_auth'];
     $status = isset($_POST['status']) ? 1 : 0;
 
-    $stmt = $conn->prepare("UPDATE customers SET customer_name = ?, revenue_auth = ?, status = ? WHERE customer_id = ?");
-    $stmt->bind_param("ssii", $customer_name, $revenue_auth, $status, $customer_id);
+    $stmt = $conn->prepare("UPDATE customers SET customer_name = ?, customer_code=?, revenue_auth = ?, status = ? WHERE customer_id = ?");
+    $stmt->bind_param("sisii", $customer_name, $customer_code, $revenue_auth, $status, $customer_id);
 
     if ($stmt->execute()) {
         $message = "Customer updated successfully!";
@@ -368,8 +371,20 @@ $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id D
                     <div class="modal-body">
                         <input type="hidden" id="edit_customer_id" name="customer_id">
                         <div class="form-group">
+                            <label for="edit_customer_code">Customer Code *</label>
+                            <input type="number" class="form-control" id="edit_customer_code" name="customer_code" required>
+                        </div>
+                        <div class="form-group">
                             <label for="edit_customer_name">Customer Name *</label>
                             <input type="text" class="form-control" id="edit_customer_name" name="customer_name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_customer_contact">Customer Contact</label>
+                            <input type="text" class="form-control" id="edit_customer_contact" name="customer_contact">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_customer_address">Customer Address</label>
+                            <input type="text" class="form-control" id="edit_customer_address" name="customer_address">
                         </div>
                         <div class="form-group">
                             <label for="edit_revenue_auth">Revenue Authorization *</label>
@@ -476,13 +491,19 @@ $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id D
 
             // Edit customer button click
             $('.edit-customer').click(function() {
+                var customer_code = $(this).data('customer_code');
                 var customerId = $(this).data('id');
                 var customerName = $(this).data('name');
+                var customer_address = $(this).data('customer_address');
+                var customer_contact = $(this).data('customer_contact');
                 var revenueAuth = $(this).data('revenue-auth');
                 var status = $(this).data('status');
 
                 $('#edit_customer_id').val(customerId);
+                $('#edit_customer_code').val(customer_code)
                 $('#edit_customer_name').val(customerName);
+                $('#edit_customer_address').val(customer_address);
+                $('#edit_customer_contact').val(customer_contact);
                 $('#edit_revenue_auth').val(revenueAuth);
                 $('#edit_status').prop('checked', status == 1);
 
