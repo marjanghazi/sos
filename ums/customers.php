@@ -8,13 +8,16 @@ $message_type = '';
 
 // Add new customer
 if (isset($_POST['add_customer'])) {
+    $customer_code = $_POST['customer_code'];
     $customer_name = $_POST['customer_name'];
+    $contact = $_POST['customer_contact'];
+    $address = $_POST['customer_address'];
     $revenue_auth = $_POST['revenue_auth'];
     $status = isset($_POST['status']) ? 1 : 0;
     $created_by = $_SESSION['username'] ?? 'Admin';
 
-    $stmt = $conn->prepare("INSERT INTO customers (customer_name, revenue_auth, status, created_by) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("ssis", $customer_name, $revenue_auth, $status, $created_by);
+    $stmt = $conn->prepare("INSERT INTO customers (customer_name, customer_code, contact, address revenue_auth, status, created_by) VALUES (?, ?, ?, ?,?, ?, ?)");
+    $stmt->bind_param("sisssis", $customer_name, $customer_code, $contact, $address, $revenue_auth, $status, $created_by);
 
     if ($stmt->execute()) {
         $message = "Customer added successfully!";
@@ -246,7 +249,7 @@ $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id D
                                         ?>
                                             <tr>
                                                 <td><?php echo $customer['customer_id']; ?></td>
-                                                <td><?php echo htmlspecialchars ($customer['customer_code'] )?></td>
+                                                <td><?php echo htmlspecialchars($customer['customer_code']) ?></td>
                                                 <td><?php echo htmlspecialchars($customer['customer_name']); ?></td>
                                                 <td><?php echo $customer['contact'] ?></td>
                                                 <td><?php echo $customer['address']; ?></td>
@@ -308,8 +311,20 @@ $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id D
                 <form method="POST" action="customers.php">
                     <div class="modal-body">
                         <div class="form-group">
+                            <label for="customer_name">Customer Code *</label>
+                            <input type="text" class="form-control" id="customer_code" name="customer_code" required>
+                        </div>
+                        <div class="form-group">
                             <label for="customer_name">Customer Name *</label>
                             <input type="text" class="form-control" id="customer_name" name="customer_name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="customer_name">Customer Contact</label>
+                            <input type="text" class="form-control" id="customer_contact" name="customer_contact">
+                        </div>
+                        <div class="form-group">
+                            <label for="customer_name">Customer Address</label>
+                            <input type="text" class="form-control" id="customer_address" name="customer_address">
                         </div>
                         <div class="form-group">
                             <label for="revenue_auth">Revenue Authorization *</label>
