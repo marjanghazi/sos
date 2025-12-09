@@ -374,7 +374,7 @@ $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id D
                         <input type="hidden" id="edit_customer_id" name="customer_id">
                         <div class="form-group">
                             <label for="edit_customer_code">Customer Code *</label>
-                            <input type="number" class="form-control" id="edit_customer_code" name="customer_code" required>
+                            <input type="text" class="form-control" id="edit_customer_code" name="customer_code" required>
                         </div>
                         <div class="form-group">
                             <label for="edit_customer_name">Customer Name *</label>
