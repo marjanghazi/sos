@@ -32,26 +32,32 @@
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
                     aria-expanded="true" aria-controls="collapseTwo">
                     <i class="fas fa-fw fa-dolly-flatbed"></i>
-                    <span>Transactions</span>
+                    <span>Configurations</span>
                 </a>
                 <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
-                        <h6 class="collapse-header">utility Management:</h6>
-                        <a class="collapse-item" href="utility-listing.php">Electricity Bills</a>
+                        <!-- <h6 class="collapse-header">Configurations</h6> -->
+                        <a class="collapse-item" href="cities_management.php">Cities Management</a>
+                        <a class="collapse-item" href="customers.php">Customers Management</a>
+                        <a class="collapse-item" href="devices.php">Device Management</a>
+                        <a class="collapse-item" href="camp_sites.php">Camp sites Management</a>
+
+
+
                     </div>
                 </div>
             </li>
 
             <!-- Divider -->
-            <hr class="sidebar-divider">
+            <!-- <hr class="sidebar-divider"> -->
 
             <!-- Heading -->
-            <div class="sidebar-heading">
+            <!-- <div class="sidebar-heading">
                 Configuration
-            </div>
+            </div> -->
 
             <!-- Nav Item - Pages Collapse Menu -->
-            <li class="nav-item" id="cm">
+            <!-- <li class="nav-item" id="cm">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseThree"
                     aria-expanded="true" aria-controls="collapseThree">
                     <i class="fas fa-fw fa-dolly-flatbed"></i>
@@ -64,7 +70,7 @@
                         <a class="collapse-item" href="provider.php">Providers</a>
                     </div>
                 </div>
-            </li>
+            </li> -->
 
            
 

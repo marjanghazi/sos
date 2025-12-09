@@ -148,13 +148,13 @@ $camp_sites_result = $conn->query("
             border-radius: 12px;
         }
 
-        .setup-type-permanent {
+        .setup-type-full {
             background-color: #e8f5e8;
             color: #2e7d32;
             border: 1px solid #2e7d32;
         }
 
-        .setup-type-temporary {
+        .setup-type-light {
             background-color: #fff3e0;
             color: #ef6c00;
             border: 1px solid #ef6c00;
@@ -230,17 +230,14 @@ $camp_sites_result = $conn->query("
                                         <?php while ($camp_site = $camp_sites_result->fetch_assoc()):
                                             $setup_type_class = '';
                                             switch (strtolower($camp_site['setup_type'])) {
-                                                case 'permanent':
-                                                    $setup_type_class = 'setup-type-permanent';
+                                                case 'Full':
+                                                    $setup_type_class = 'setup-type-full';
                                                     break;
-                                                case 'temporary':
-                                                    $setup_type_class = 'setup-type-temporary';
-                                                    break;
-                                                case 'mobile':
-                                                    $setup_type_class = 'setup-type-mobile';
+                                                case 'Light':
+                                                    $setup_type_class = 'setup-type-light';
                                                     break;
                                                 default:
-                                                    $setup_type_class = 'setup-type-permanent';
+                                                    $setup_type_class = 'setup-type-full';
                                             }
                                         ?>
                                             <tr>
@@ -322,9 +319,8 @@ $camp_sites_result = $conn->query("
                             <label for="setup_type">Setup Type *</label>
                             <select class="form-control" id="setup_type" name="setup_type" required>
                                 <option value="">Select Setup Type</option>
-                                <option value="Permanent">Permanent</option>
-                                <option value="Temporary">Temporary</option>
-                                <option value="Mobile">Mobile</option>
+                                <option value="1">Full</option>
+                                <option value="2">Light</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -378,9 +374,8 @@ $camp_sites_result = $conn->query("
                             <label for="edit_setup_type">Setup Type *</label>
                             <select class="form-control" id="edit_setup_type" name="setup_type" required>
                                 <option value="">Select Setup Type</option>
-                                <option value="Permanent">Permanent</option>
-                                <option value="Temporary">Temporary</option>
-                                <option value="Mobile">Mobile</option>
+                                <option value="full">full</option>
+                                <option value="light">light</option>
                             </select>
                         </div>
                         <div class="form-group">
