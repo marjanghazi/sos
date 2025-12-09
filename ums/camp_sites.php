@@ -230,10 +230,10 @@ $camp_sites_result = $conn->query("
                                         <?php while ($camp_site = $camp_sites_result->fetch_assoc()):
                                             $setup_type_class = '';
                                             switch (strtolower($camp_site['setup_type'])) {
-                                                case 'Full':
+                                                case '1':
                                                     $setup_type_class = 'setup-type-full';
                                                     break;
-                                                case 'Light':
+                                                case '2':
                                                     $setup_type_class = 'setup-type-light';
                                                     break;
                                                 default:
@@ -374,8 +374,8 @@ $camp_sites_result = $conn->query("
                             <label for="edit_setup_type">Setup Type *</label>
                             <select class="form-control" id="edit_setup_type" name="setup_type" required>
                                 <option value="">Select Setup Type</option>
-                                <option value="full">full</option>
-                                <option value="light">light</option>
+                                <option value="1">full</option>
+                                <option value="2">light</option>
                             </select>
                         </div>
                         <div class="form-group">
