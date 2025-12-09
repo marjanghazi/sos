@@ -42,8 +42,8 @@ if (isset($_POST['update_customer'])) {
     $revenue_auth = $_POST['revenue_auth'];
     $status = isset($_POST['status']) ? 1 : 0;
 
-    $stmt = $conn->prepare("UPDATE customers SET customer_name = ?, customer_code=?, revenue_auth = ?, status = ? WHERE customer_id = ?");
-    $stmt->bind_param("sisii", $customer_name, $customer_code, $revenue_auth, $status, $customer_id);
+    $stmt = $conn->prepare("UPDATE customers SET customer_name = ?, customer_code=?, contact=?, address=?, revenue_auth = ?, status = ? WHERE customer_id = ?");
+    $stmt->bind_param("sisii", $customer_name, $customer_code, $customer_contact, $customer_address, $revenue_auth, $status, $customer_id);
 
     if ($stmt->execute()) {
         $message = "Customer updated successfully!";
