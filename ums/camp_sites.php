@@ -246,7 +246,16 @@ $camp_sites_result = $conn->query("
                                                 <td><?php echo htmlspecialchars($camp_site['city_name']); ?></td>
                                                 <td>
                                                     <span class="setup-type-badge <?php echo $setup_type_class; ?>">
-                                                        <?php echo htmlspecialchars($camp_site['setup_type']); ?>
+                                                        <?php
+                                                        if ($camp_site['setup_type'] == 1) {
+                                                            echo 'Full';
+                                                        } elseif ($camp_site['setup_type'] == 2) {
+                                                            echo 'Light';
+                                                        } else {
+                                                            echo htmlspecialchars($camp_site['setup_type']);
+                                                        }
+                                                        ?>
+
                                                     </span>
                                                 </td>
                                                 <td>
