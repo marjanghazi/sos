@@ -47,7 +47,7 @@ if (isset($_POST['update_city'])) {
     $stmt->close();
 }
 
-// Delete city
+// Delete city - store message in session to avoid URL parameters
 if (isset($_GET['delete_id'])) {
     $city_id = $_GET['delete_id'];
 
@@ -61,32 +61,42 @@ if (isset($_GET['delete_id'])) {
 
     if ($check_row['count'] > 0) {
         // City is being used in camp_sites, cannot delete
-        $message = "Cannot delete city! This entry is being used in camp sites.";
-        $message_type = "error";
+        $_SESSION['message'] = "Cannot delete city! This entry is being used in camp sites.";
+        $_SESSION['message_type'] = "error";
     } else {
         // City is not being used, proceed with deletion
         $stmt = $conn->prepare("DELETE FROM cities WHERE city_id = ?");
         $stmt->bind_param("i", $city_id);
 
         if ($stmt->execute()) {
-            $message = "City deleted successfully!";
-            $message_type = "success";
+            $_SESSION['message'] = "City deleted successfully!";
+            $_SESSION['message_type'] = "success";
         } else {
-            $message = "Error deleting city: " . $stmt->error;
-            $message_type = "error";
+            $_SESSION['message'] = "Error deleting city: " . $stmt->error;
+            $_SESSION['message_type'] = "error";
         }
         $stmt->close();
     }
 
-    // Redirect to avoid resubmission
-    header("Location: cities_management.php?message=" . urlencode($message) . "&type=" . $message_type);
+    // Redirect to avoid resubmission and clear URL parameters
+    header("Location: cities_management.php");
     exit();
 }
 
 // Fetch all cities for the table
 $cities_result = $conn->query("SELECT * FROM cities ORDER BY city_id DESC");
 
-// Check for messages from redirect
+// Check for session messages
+if (isset($_SESSION['message']) && isset($_SESSION['message_type'])) {
+    $message = $_SESSION['message'];
+    $message_type = $_SESSION['message_type'];
+
+    // Clear session messages after displaying
+    unset($_SESSION['message']);
+    unset($_SESSION['message_type']);
+}
+
+// Also check for URL messages (for backward compatibility)
 if (isset($_GET['message']) && isset($_GET['type'])) {
     $message = urldecode($_GET['message']);
     $message_type = $_GET['type'];
@@ -466,6 +476,12 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
             setTimeout(function() {
                 $('.alert').alert('close');
             }, 5000);
+
+            // Clear URL parameters to prevent resubmission on reload
+            if (window.history.replaceState && (window.location.search.includes('delete_id') || window.location.search.includes('message'))) {
+                var cleanURL = window.location.origin + window.location.pathname;
+                window.history.replaceState({}, document.title, cleanURL);
+            }
         });
     </script>
 
