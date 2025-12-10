@@ -234,7 +234,7 @@ $summaries_result = $conn->query("
                                                 <td><?php echo htmlspecialchars($summary['authority_name']); ?></td>
                                                 <td><?php echo date('M j, Y', strtotime($summary['created_date'])); ?></td>
                                                 <td class="action-buttons">
-                                                    <a href="cash_disbursement_edit.php?id=<?php echo $summary['summary_id']; ?>" class="btn btn-sm btn-primary">
+                                                    <a href="edit_cash_disbursement.php?id=<?php echo $summary['summary_id']; ?>" class="btn btn-sm btn-primary">
                                                         <i class="fas fa-edit"></i> Edit
                                                     </a>
                                                     <button class="btn btn-sm btn-danger delete-summary"
