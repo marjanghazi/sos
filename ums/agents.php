@@ -17,11 +17,11 @@ if (isset($_POST['add_agent'])) {
     $stmt->bind_param("siis", $agent_name, $device_id, $status, $created_by);
 
     if ($stmt->execute()) {
-        $message = "Agent added successfully!";
-        $message_type = "success";
+        $_SESSION['message'] = "Agent added successfully!";
+        $_SESSION['message_type'] = "success";
     } else {
-        $message = "Error adding agent: " . $stmt->error;
-        $message_type = "error";
+        $_SESSION['message'] = "Error adding agent: " . $stmt->error;
+        $_SESSION['message_type'] = "error";
     }
     $stmt->close();
     // REDIRECT after operation
@@ -40,11 +40,11 @@ if (isset($_POST['update_agent'])) {
     $stmt->bind_param("siii", $agent_name, $device_id, $status, $agent_id);
 
     if ($stmt->execute()) {
-        $message = "Agent updated successfully!";
-        $message_type = "success";
+        $_SESSION['message'] = "Agent updated successfully!";
+        $_SESSION['message_type'] = "success";
     } else {
-        $message = "Error updating agent: " . $stmt->error;
-        $message_type = "error";
+        $_SESSION['message'] = "Error updating agent: " . $stmt->error;
+        $_SESSION['message_type'] = "error";
     }
     $stmt->close();
 }
@@ -53,19 +53,34 @@ if (isset($_POST['update_agent'])) {
 if (isset($_GET['delete_id'])) {
     $agent_id = $_GET['delete_id'];
 
-    $stmt = $conn->prepare("DELETE FROM agents WHERE agent_id = ?");
-    $stmt->bind_param("i", $agent_id);
+    // Check if the agent is being used in cash_disbursement_details table
+    $check_stmt = $conn->prepare("SELECT COUNT(*) as count FROM cash_disbursement_details WHERE agent_id = ?");
+    $check_stmt->bind_param("i", $agent_id);
+    $check_stmt->execute();
+    $check_result = $check_stmt->get_result();
+    $check_row = $check_result->fetch_assoc();
+    $check_stmt->close();
 
-    if ($stmt->execute()) {
-        $message = "Agent deleted successfully!";
-        $message_type = "success";
+    if ($check_row['count'] > 0) {
+        // Agent is being used in cash_disbursement_details, cannot delete
+        $_SESSION['message'] = "Cannot delete agent! This entry is being used in cash disbursement details.";
+        $_SESSION['message_type'] = "error";
     } else {
-        $message = "Error deleting agent: " . $stmt->error;
-        $message_type = "error";
-    }
-    $stmt->close();
+        // Agent is not being used, proceed with deletion
+        $stmt = $conn->prepare("DELETE FROM agents WHERE agent_id = ?");
+        $stmt->bind_param("i", $agent_id);
 
-    // Redirect to avoid resubmission
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "Agent deleted successfully!";
+            $_SESSION['message_type'] = "success";
+        } else {
+            $_SESSION['message'] = "Error deleting agent: " . $stmt->error;
+            $_SESSION['message_type'] = "error";
+        }
+        $stmt->close();
+    }
+
+    // Redirect to avoid resubmission and clear URL parameters
     header("Location: agents.php");
     exit();
 }
@@ -80,6 +95,28 @@ $agents_result = $conn->query("
     LEFT JOIN devices d ON a.device_id = d.device_id 
     ORDER BY a.agent_id DESC
 ");
+
+// Check for session messages
+if (isset($_SESSION['message']) && isset($_SESSION['message_type'])) {
+    $message = $_SESSION['message'];
+    $message_type = $_SESSION['message_type'];
+
+    // Clear session messages after displaying
+    unset($_SESSION['message']);
+    unset($_SESSION['message_type']);
+}
+
+// Also check for URL messages (for backward compatibility)
+if (isset($_GET['message']) && isset($_GET['type'])) {
+    $message = urldecode($_GET['message']);
+    $message_type = $_GET['type'];
+}
+
+// Get stats for quick cards
+$total_agents = $conn->query("SELECT COUNT(*) as total FROM agents")->fetch_assoc()['total'];
+$active_agents = $conn->query("SELECT COUNT(*) as active FROM agents WHERE status = 1")->fetch_assoc()['active'];
+$inactive_agents = $conn->query("SELECT COUNT(*) as inactive FROM agents WHERE status = 0")->fetch_assoc()['inactive'];
+$active_rate = $total_agents > 0 ? round(($active_agents / $total_agents) * 100, 1) : 0;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -132,12 +169,29 @@ $agents_result = $conn->query("
             background-color: #d4edda;
             border-color: #c3e6cb;
             color: #155724;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
         }
 
         .alert-error {
             background-color: #f8d7da;
             border-color: #f5c6cb;
             color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #dc3545;
+        }
+
+        .alert-warning {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
         }
 
         .agent-icon {
@@ -161,6 +215,19 @@ $agents_result = $conn->query("
 
         .stats-card:hover {
             transform: translateY(-2px);
+        }
+
+        .alert i {
+            margin-right: 10px;
+        }
+
+        .close {
+            color: #000;
+            opacity: 0.5;
+        }
+
+        .close:hover {
+            opacity: 0.8;
         }
     </style>
 </head>
@@ -196,7 +263,14 @@ $agents_result = $conn->query("
 
                     <!-- Message Alert -->
                     <?php if (!empty($message)): ?>
-                        <div class="alert <?php echo $message_type == 'success' ? 'alert-success' : 'alert-error'; ?> alert-dismissible fade show" role="alert">
+                        <div class="alert <?php echo $message_type == 'success' ? 'alert-success' : ($message_type == 'error' ? 'alert-error' : 'alert-warning'); ?> alert-dismissible fade show" role="alert">
+                            <?php if ($message_type == 'error'): ?>
+                                <i class="fas fa-times-circle"></i>
+                            <?php elseif ($message_type == 'success'): ?>
+                                <i class="fas fa-check-circle"></i>
+                            <?php else: ?>
+                                <i class="fas fa-exclamation-triangle"></i>
+                            <?php endif; ?>
                             <?php echo $message; ?>
                             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
@@ -215,10 +289,7 @@ $agents_result = $conn->query("
                                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                                 Total Agents</div>
                                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                                <?php
-                                                $total_agents = $conn->query("SELECT COUNT(*) as total FROM agents")->fetch_assoc()['total'];
-                                                echo $total_agents;
-                                                ?>
+                                                <?php echo $total_agents; ?>
                                             </div>
                                         </div>
                                         <div class="col-auto">
@@ -238,10 +309,7 @@ $agents_result = $conn->query("
                                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                                 Active Agents</div>
                                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                                <?php
-                                                $active_agents = $conn->query("SELECT COUNT(*) as active FROM agents WHERE status = 1")->fetch_assoc()['active'];
-                                                echo $active_agents;
-                                                ?>
+                                                <?php echo $active_agents; ?>
                                             </div>
                                         </div>
                                         <div class="col-auto">
@@ -261,10 +329,7 @@ $agents_result = $conn->query("
                                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                                 Inactive Agents</div>
                                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                                <?php
-                                                $inactive_agents = $conn->query("SELECT COUNT(*) as inactive FROM agents WHERE status = 0")->fetch_assoc()['inactive'];
-                                                echo $inactive_agents;
-                                                ?>
+                                                <?php echo $inactive_agents; ?>
                                             </div>
                                         </div>
                                         <div class="col-auto">
@@ -284,10 +349,7 @@ $agents_result = $conn->query("
                                             <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
                                                 Active Rate</div>
                                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                                <?php
-                                                $active_rate = $total_agents > 0 ? round(($active_agents / $total_agents) * 100, 1) : 0;
-                                                echo $active_rate . '%';
-                                                ?>
+                                                <?php echo $active_rate . '%'; ?>
                                             </div>
                                         </div>
                                         <div class="col-auto">
@@ -396,7 +458,10 @@ $agents_result = $conn->query("
                             <label for="device_id">Assign Device</label>
                             <select class="form-control" id="device_id" name="device_id">
                                 <option value="">No Device Assigned</option>
-                                <?php while ($device = $devices_result->fetch_assoc()): ?>
+                                <?php
+                                // Reset devices result pointer
+                                $devices_result->data_seek(0);
+                                while ($device = $devices_result->fetch_assoc()): ?>
                                     <option value="<?php echo $device['device_id']; ?>"><?php echo htmlspecialchars($device['device_name']); ?></option>
                                 <?php endwhile; ?>
                             </select>
@@ -572,6 +637,12 @@ $agents_result = $conn->query("
             setTimeout(function() {
                 $('.alert').alert('close');
             }, 5000);
+
+            // Clear URL parameters to prevent resubmission on reload
+            if (window.history.replaceState && (window.location.search.includes('delete_id') || window.location.search.includes('message'))) {
+                var cleanURL = window.location.origin + window.location.pathname;
+                window.history.replaceState({}, document.title, cleanURL);
+            }
         });
     </script>
 
