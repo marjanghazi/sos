@@ -20,11 +20,11 @@ if (isset($_POST['add_customer'])) {
     $stmt->bind_param("sssssis", $customer_name, $customer_code, $contact, $address, $revenue_auth, $status, $created_by);
 
     if ($stmt->execute()) {
-        $message = "Customer added successfully!";
-        $message_type = "success";
+        $_SESSION['message'] = "Customer added successfully!";
+        $_SESSION['message_type'] = "success";
     } else {
-        $message = "Error adding customer: " . $stmt->error;
-        $message_type = "error";
+        $_SESSION['message'] = "Error adding customer: " . $stmt->error;
+        $_SESSION['message_type'] = "error";
     }
     $stmt->close();
     // Redirect to avoid resubmission
@@ -46,37 +46,69 @@ if (isset($_POST['update_customer'])) {
     $stmt->bind_param("sssssii", $customer_name, $customer_code, $customer_contact, $customer_address, $revenue_auth, $status, $customer_id);
 
     if ($stmt->execute()) {
-        $message = "Customer updated successfully!";
-        $message_type = "success";
+        $_SESSION['message'] = "Customer updated successfully!";
+        $_SESSION['message_type'] = "success";
     } else {
-        $message = "Error updating customer: " . $stmt->error;
-        $message_type = "error";
+        $_SESSION['message'] = "Error updating customer: " . $stmt->error;
+        $_SESSION['message_type'] = "error";
     }
     $stmt->close();
 }
+
 // Delete customer
 if (isset($_GET['delete_id'])) {
     $customer_id = $_GET['delete_id'];
 
-    $stmt = $conn->prepare("DELETE FROM customers WHERE customer_id = ?");
-    $stmt->bind_param("i", $customer_id);
+    // Check if the customer is being used in cash_disbursement_summary table
+    $check_stmt = $conn->prepare("SELECT COUNT(*) as count FROM cash_disbursement_summary WHERE customer_id = ?");
+    $check_stmt->bind_param("i", $customer_id);
+    $check_stmt->execute();
+    $check_result = $check_stmt->get_result();
+    $check_row = $check_result->fetch_assoc();
+    $check_stmt->close();
 
-    if ($stmt->execute()) {
-        $message = "Customer deleted successfully!";
-        $message_type = "success";
+    if ($check_row['count'] > 0) {
+        // Customer is being used in cash_disbursement_summary, cannot delete
+        $_SESSION['message'] = "Cannot delete customer! This entry is being used in cash disbursement records.";
+        $_SESSION['message_type'] = "error";
     } else {
-        $message = "Error deleting customer: " . $stmt->error;
-        $message_type = "error";
-    }
-    $stmt->close();
+        // Customer is not being used, proceed with deletion
+        $stmt = $conn->prepare("DELETE FROM customers WHERE customer_id = ?");
+        $stmt->bind_param("i", $customer_id);
 
-    // Redirect to avoid resubmission
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "Customer deleted successfully!";
+            $_SESSION['message_type'] = "success";
+        } else {
+            $_SESSION['message'] = "Error deleting customer: " . $stmt->error;
+            $_SESSION['message_type'] = "error";
+        }
+        $stmt->close();
+    }
+
+    // Redirect to avoid resubmission and clear URL parameters
     header("Location: customers.php");
     exit();
 }
 
 // Fetch all customers for the table
 $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id DESC");
+
+// Check for session messages
+if (isset($_SESSION['message']) && isset($_SESSION['message_type'])) {
+    $message = $_SESSION['message'];
+    $message_type = $_SESSION['message_type'];
+
+    // Clear session messages after displaying
+    unset($_SESSION['message']);
+    unset($_SESSION['message_type']);
+}
+
+// Also check for URL messages (for backward compatibility)
+if (isset($_GET['message']) && isset($_GET['type'])) {
+    $message = urldecode($_GET['message']);
+    $message_type = $_GET['type'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -129,12 +161,29 @@ $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id D
             background-color: #d4edda;
             border-color: #c3e6cb;
             color: #155724;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
         }
 
         .alert-error {
             background-color: #f8d7da;
             border-color: #f5c6cb;
             color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #dc3545;
+        }
+
+        .alert-warning {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
         }
 
         .revenue-auth-badge {
@@ -165,6 +214,19 @@ $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id D
             background-color: #f3e5f5;
             color: #7b1fa2;
             border: 1px solid #7b1fa2;
+        }
+
+        .alert i {
+            margin-right: 10px;
+        }
+
+        .close {
+            color: #000;
+            opacity: 0.5;
+        }
+
+        .close:hover {
+            opacity: 0.8;
         }
     </style>
 </head>
@@ -200,7 +262,14 @@ $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id D
 
                     <!-- Message Alert -->
                     <?php if (!empty($message)): ?>
-                        <div class="alert <?php echo $message_type == 'success' ? 'alert-success' : 'alert-error'; ?> alert-dismissible fade show" role="alert">
+                        <div class="alert <?php echo $message_type == 'success' ? 'alert-success' : ($message_type == 'error' ? 'alert-error' : 'alert-warning'); ?> alert-dismissible fade show" role="alert">
+                            <?php if ($message_type == 'error'): ?>
+                                <i class="fas fa-times-circle"></i>
+                            <?php elseif ($message_type == 'success'): ?>
+                                <i class="fas fa-check-circle"></i>
+                            <?php else: ?>
+                                <i class="fas fa-exclamation-triangle"></i>
+                            <?php endif; ?>
                             <?php echo $message; ?>
                             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
@@ -511,6 +580,7 @@ $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id D
 
                 $('#editCustomerModal').modal('show');
             });
+
             // Delete customer button click
             $('.delete-customer').click(function() {
                 var customerId = $(this).data('id');
@@ -526,6 +596,12 @@ $customers_result = $conn->query("SELECT * FROM customers ORDER BY customer_id D
             setTimeout(function() {
                 $('.alert').alert('close');
             }, 5000);
+
+            // Clear URL parameters to prevent resubmission on reload
+            if (window.history.replaceState && (window.location.search.includes('delete_id') || window.location.search.includes('message'))) {
+                var cleanURL = window.location.origin + window.location.pathname;
+                window.history.replaceState({}, document.title, cleanURL);
+            }
         });
     </script>
 
