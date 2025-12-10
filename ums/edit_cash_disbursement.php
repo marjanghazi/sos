@@ -82,7 +82,7 @@ if (isset($_POST['update_summary'])) {
         
         $_SESSION['message'] = "Cash disbursement summary updated successfully!";
         $_SESSION['message_type'] = "success";
-        header("Location: cash_disbursement_edit.php?id=" . $summary_id . "&tab=summary");
+        header("Location: edit_cash_disbursement.php?id=" . $summary_id . "&tab=summary");
         exit();
     } else {
         $message = "Error updating summary: " . $stmt->error;
@@ -123,7 +123,7 @@ if (isset($_POST['add_detail'])) {
         
         $_SESSION['message'] = "Transaction detail added successfully!";
         $_SESSION['message_type'] = "success";
-        header("Location: cash_disbursement_edit.php?id=" . $summary_id . "&tab=details");
+        header("Location: edit_cash_disbursement.php?id=" . $summary_id . "&tab=details");
         exit();
     } else {
         $message = "Error adding transaction detail: " . $stmt->error;
@@ -189,7 +189,7 @@ if (isset($_POST['update_detail'])) {
             
             $_SESSION['message'] = "Transaction detail updated successfully!";
             $_SESSION['message_type'] = "success";
-            header("Location: cash_disbursement_edit.php?id=" . $summary_id . "&tab=details");
+            header("Location: edit_cash_disbursement.php?id=" . $summary_id . "&tab=details");
             exit();
         } else {
             $message = "Error updating transaction detail: " . $stmt->error;
@@ -235,7 +235,7 @@ if (isset($_GET['delete_detail'])) {
         }
         $stmt->close();
     }
-    header("Location: cash_disbursement_edit.php?id=" . $summary_id . "&tab=details");
+    header("Location: edit_cash_disbursement.php?id=" . $summary_id . "&tab=details");
     exit();
 }
 
@@ -560,7 +560,7 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'summary';
                                     </span>
                                 </div>
                                 <div class="card-body">
-                                    <form method="POST" action="cash_disbursement_edit.php?id=<?php echo $summary_id; ?>&tab=summary" id="summaryForm">
+                                    <form method="POST" action="edit_cash_disbursement.php?id=<?php echo $summary_id; ?>&tab=summary" id="summaryForm">
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <div class="form-group">
@@ -677,7 +677,7 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'summary';
                                                 <button type="submit" name="update_summary" class="btn btn-primary">
                                                     <i class="fas fa-save"></i> Update Summary
                                                 </button>
-                                                <button type="button" class="btn btn-next-tab" onclick="window.location.href='cash_disbursement_edit.php?id=<?php echo $summary_id; ?>&tab=details'">
+                                                <button type="button" class="btn btn-next-tab" onclick="window.location.href='edit_cash_disbursement.php?id=<?php echo $summary_id; ?>&tab=details'">
                                                     <i class="fas fa-arrow-right"></i> Manage Details
                                                     <i class="fas fa-arrow-right ml-2"></i>
                                                 </button>
@@ -716,7 +716,7 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'summary';
                                             <?php endif; ?>
                                         </div>
                                         <div class="card-body">
-                                            <form method="POST" action="cash_disbursement_edit.php?id=<?php echo $summary_id; ?>&tab=details" id="detailForm">
+                                            <form method="POST" action="edit_cash_disbursement.php?id=<?php echo $summary_id; ?>&tab=details" id="detailForm">
                                                 <?php if ($editing_detail): ?>
                                                     <input type="hidden" name="detail_id" value="<?php echo $editing_detail_id; ?>">
                                                 <?php endif; ?>
@@ -785,7 +785,7 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'summary';
                                                     <button type="submit" name="update_detail" class="btn btn-warning btn-block">
                                                         <i class="fas fa-save"></i> Update Detail
                                                     </button>
-                                                    <a href="cash_disbursement_edit.php?id=<?php echo $summary_id; ?>&tab=details" class="btn btn-secondary btn-block mt-2">
+                                                    <a href="edit_cash_disbursement.php?id=<?php echo $summary_id; ?>&tab=details" class="btn btn-secondary btn-block mt-2">
                                                         <i class="fas fa-times"></i> Cancel Edit
                                                     </a>
                                                 <?php else: ?>
@@ -798,7 +798,7 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'summary';
                                                     <i class="fas fa-chart-bar"></i> View Statistics
                                                     <i class="fas fa-arrow-right ml-2"></i>
                                                 </button>
-                                                <a href="cash_disbursement_edit.php?id=<?php echo $summary_id; ?>&tab=summary" class="btn btn-secondary btn-block mt-2">
+                                                <a href="edit_cash_disbursement.php?id=<?php echo $summary_id; ?>&tab=summary" class="btn btn-secondary btn-block mt-2">
                                                     <i class="fas fa-arrow-left"></i> Back to Summary
                                                 </a>
                                             </form>
@@ -861,11 +861,11 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'summary';
                                                                     <td><?php echo number_format($detail['total_trans_amount'], 2); ?></td>
                                                                     <td><?php echo date('Y-m-d H:i', strtotime($detail['transaction_date'])); ?></td>
                                                                     <td>
-                                                                        <a href="cash_disbursement_edit.php?id=<?php echo $summary_id; ?>&tab=details&edit_detail=<?php echo $detail['detail_id']; ?>"
+                                                                        <a href="edit_cash_disbursement.php?id=<?php echo $summary_id; ?>&tab=details&edit_detail=<?php echo $detail['detail_id']; ?>"
                                                                             class="btn btn-sm btn-edit-detail <?php echo $is_editing ? 'disabled' : ''; ?>">
                                                                             <i class="fas fa-edit"></i>
                                                                         </a>
-                                                                        <a href="cash_disbursement_edit.php?id=<?php echo $summary_id; ?>&delete_detail=<?php echo $detail['detail_id']; ?>&tab=details"
+                                                                        <a href="edit_cash_disbursement.php?id=<?php echo $summary_id; ?>&delete_detail=<?php echo $detail['detail_id']; ?>&tab=details"
                                                                             class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this detail? This cannot be undone.')">
                                                                             <i class="fas fa-trash"></i>
                                                                         </a>
@@ -1027,10 +1027,10 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'summary';
                                                     <?php endif; ?>
                                                 </div>
                                                 <div class="text-center">
-                                                    <a href="cash_disbursement_edit.php?id=<?php echo $summary_id; ?>&tab=details" class="btn btn-primary">
+                                                    <a href="edit_cash_disbursement.php?id=<?php echo $summary_id; ?>&tab=details" class="btn btn-primary">
                                                         <i class="fas fa-arrow-left"></i> Back to Manage Details
                                                     </a>
-                                                    <a href="cash_disbursement_edit.php?id=<?php echo $summary_id; ?>&tab=summary" class="btn btn-info ml-2">
+                                                    <a href="edit_cash_disbursement.php?id=<?php echo $summary_id; ?>&tab=summary" class="btn btn-info ml-2">
                                                         <i class="fas fa-file-alt"></i> Edit Summary
                                                     </a>
                                                     <a href="cash_disbursement.php" class="btn btn-secondary ml-2">
@@ -1045,7 +1045,7 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'summary';
                                 <div class="alert alert-info mt-3">
                                     <i class="fas fa-info-circle"></i> No statistics available. Add some transaction details first.
                                     <div class="mt-2">
-                                        <a href="cash_disbursement_edit.php?id=<?php echo $summary_id; ?>&tab=details" class="btn btn-sm btn-primary">
+                                        <a href="edit_cash_disbursement.php?id=<?php echo $summary_id; ?>&tab=details" class="btn btn-sm btn-primary">
                                             <i class="fas fa-list"></i> Go to Manage Details
                                         </a>
                                     </div>
@@ -1131,7 +1131,7 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'summary';
 
         // Function to navigate to statistics tab
         function goToStatistics() {
-            window.location.href = 'cash_disbursement_edit.php?id=<?php echo $summary_id; ?>&tab=statistics';
+            window.location.href = 'edit_cash_disbursement.php?id=<?php echo $summary_id; ?>&tab=statistics';
         }
     </script>
 
