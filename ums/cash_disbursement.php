@@ -165,7 +165,7 @@ $summaries_result = $conn->query("
                     <!-- Page Heading -->
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <h1 class="h3 mb-0 text-gray-800">Cash Disbursement Summary</h1>
-                        <a href="cash_disbursement_add.php" class="d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+                        <a href="add_cash_disbursement.php" class="d-sm-inline-block btn btn-sm btn-primary shadow-sm">
                             <i class="fas fa-plus fa-sm text-white-50"></i> Add New Summary
                         </a>
                     </div>
