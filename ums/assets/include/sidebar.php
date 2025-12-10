@@ -40,6 +40,7 @@
                         <a class="collapse-item" href="cities_management.php">Cities Management</a>
                         <a class="collapse-item" href="customers.php">Customers Management</a>
                         <a class="collapse-item" href="devices.php">Device Management</a>
+                        <a class="collapse-item" href="agents.php">Agents Management</a>
                         <a class="collapse-item" href="camp_sites.php">Camp sites Management</a>
                         <a class="collapse-item" href="cash_disbursement.php">Cash Disbursement</a>
 
