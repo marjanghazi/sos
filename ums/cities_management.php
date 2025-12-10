@@ -147,6 +147,7 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
 
         .action-buttons .btn {
             margin-right: 5px;
+            margin-bottom: 5px;
         }
 
         .alert-success {
@@ -190,6 +191,102 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
         .close:hover {
             opacity: 0.8;
         }
+
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+            .d-sm-flex {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+            }
+
+            .d-sm-flex .btn {
+                margin-top: 10px;
+                align-self: flex-start;
+            }
+
+            .modal-dialog {
+                margin: 10px;
+            }
+
+            .action-buttons {
+                min-width: 150px;
+            }
+
+            .action-buttons .btn {
+                display: block;
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 5px;
+            }
+
+            .table-responsive {
+                border: none;
+            }
+
+            #citiesTable_wrapper .row:first-child {
+                flex-direction: column;
+            }
+
+            #citiesTable_wrapper .col-sm-12 {
+                margin-bottom: 10px;
+            }
+
+            #citiesTable_wrapper .dataTables_filter {
+                text-align: left !important;
+            }
+
+            #citiesTable_wrapper .dataTables_length,
+            #citiesTable_wrapper .dataTables_filter {
+                padding: 0;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .container-fluid {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+
+            .card-body {
+                padding: 15px;
+            }
+
+            .h3 {
+                font-size: 1.5rem;
+            }
+
+            .modal-content {
+                margin: 0 10px;
+            }
+
+            .btn-sm {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.875rem;
+            }
+
+            .action-buttons .btn i {
+                margin-right: 5px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .h3 {
+                font-size: 1.3rem;
+            }
+
+            .btn {
+                font-size: 0.85rem;
+                padding: 0.375rem 0.75rem;
+            }
+
+            .modal-header h5 {
+                font-size: 1.1rem;
+            }
+
+            .form-group label {
+                font-size: 0.9rem;
+            }
+        }
     </style>
 </head>
 
@@ -212,12 +309,12 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
                 <!-- End of Topbar -->
 
                 <!-- Begin Page Content -->
-                <div class="container-fluid">
+                <div class="container-fluid px-md-4 px-sm-3 px-2">
 
                     <!-- Page Heading -->
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <h1 class="h3 mb-0 text-gray-800">Cities Management</h1>
-                        <button class="d-sm-inline-block btn btn-sm btn-primary shadow-sm" data-toggle="modal" data-target="#addCityModal">
+                        <button class="d-sm-inline-block btn btn-sm btn-primary shadow-sm mt-sm-0 mt-2" data-toggle="modal" data-target="#addCityModal">
                             <i class="fas fa-plus fa-sm text-white-50"></i> Add New City
                         </button>
                     </div>
@@ -244,15 +341,15 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
                         <div class="card-header py-3">
                             <h6 class="m-0 font-weight-bold text-primary">All Cities</h6>
                         </div>
-                        <div class="card-body">
+                        <div class="card-body p-md-4 p-sm-3 p-2">
                             <div class="table-responsive">
-                                <table id="citiesTable" class="table table-bordered" width="100%" cellspacing="0">
+                                <table id="citiesTable" class="table table-bordered table-hover" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
                                             <th>ID</th>
                                             <th>City Name</th>
                                             <th>Status</th>
-                                            <th class="d-none">Created By</th>
+                                            <th class="d-none d-md-table-cell">Created By</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -266,18 +363,18 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
                                                         <?php echo $city['status'] ? 'Active' : 'Inactive'; ?>
                                                     </span>
                                                 </td>
-                                                <td class="d-none"><?php echo htmlspecialchars($city['created_by']); ?></td>
+                                                <td class="d-none d-md-table-cell"><?php echo htmlspecialchars($city['created_by']); ?></td>
                                                 <td class="action-buttons">
                                                     <button class="btn btn-sm btn-primary edit-city"
                                                         data-id="<?php echo $city['city_id']; ?>"
                                                         data-name="<?php echo htmlspecialchars($city['city_name']); ?>"
                                                         data-status="<?php echo $city['status']; ?>">
-                                                        <i class="fas fa-edit"></i> Edit
+                                                        <i class="fas fa-edit"></i> <span class="d-none d-md-inline">Edit</span>
                                                     </button>
                                                     <button class="btn btn-sm btn-danger delete-city"
                                                         data-id="<?php echo $city['city_id']; ?>"
                                                         data-name="<?php echo htmlspecialchars($city['city_name']); ?>">
-                                                        <i class="fas fa-trash"></i> Delete
+                                                        <i class="fas fa-trash"></i> <span class="d-none d-md-inline">Delete</span>
                                                     </button>
                                                 </td>
                                             </tr>
@@ -302,7 +399,7 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
 
     <!-- Add City Modal -->
     <div class="modal fade" id="addCityModal" tabindex="-1" role="dialog" aria-labelledby="addCityModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
+        <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="addCityModalLabel">Add New City</h5>
@@ -336,7 +433,7 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
 
     <!-- Edit City Modal -->
     <div class="modal fade" id="editCityModal" tabindex="-1" role="dialog" aria-labelledby="editCityModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
+        <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="editCityModalLabel">Edit City</h5>
@@ -371,7 +468,7 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
 
     <!-- Delete Confirmation Modal -->
     <div class="modal fade" id="deleteCityModal" tabindex="-1" role="dialog" aria-labelledby="deleteCityModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
+        <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="deleteCityModalLabel">Confirm Delete</h5>
@@ -418,7 +515,7 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
 
     <script>
         $(document).ready(function() {
-            // Initialize DataTable
+            // Initialize DataTable with responsive settings
             $('#citiesTable').DataTable({
                 "pageLength": 10,
                 "lengthMenu": [
@@ -445,7 +542,8 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
                         "next": "Next",
                         "previous": "Previous"
                     }
-                }
+                },
+                "responsive": true
             });
 
             // Edit city button click
@@ -482,6 +580,11 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
                 var cleanURL = window.location.origin + window.location.pathname;
                 window.history.replaceState({}, document.title, cleanURL);
             }
+
+            // Handle window resize for better mobile experience
+            $(window).resize(function() {
+                $('#citiesTable').DataTable().columns.adjust();
+            });
         });
     </script>
 
