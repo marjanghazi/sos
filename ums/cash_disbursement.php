@@ -14,6 +14,13 @@ unset($_SESSION['message_type']);
 if (isset($_GET['delete_id'])) {
     $summary_id = $_GET['delete_id'];
 
+    // 1. Delete detail rows first
+    $detail_stmt = $conn->prepare("DELETE FROM cash_disbursement_details WHERE summary_id = ?");
+    $detail_stmt->bind_param("i", $summary_id);
+    $detail_stmt->execute();
+    $detail_stmt->close();
+
+    // 2. Delete summary record
     $stmt = $conn->prepare("DELETE FROM cash_disbursement_summary WHERE summary_id = ?");
     $stmt->bind_param("i", $summary_id);
 
@@ -26,10 +33,10 @@ if (isset($_GET['delete_id'])) {
     }
     $stmt->close();
 
-    // Redirect to avoid resubmission
     header("Location: cash_disbursement.php");
     exit();
 }
+
 
 // Fetch all cash disbursement summaries for the table with related data
 $summaries_result = $conn->query("
