@@ -5,7 +5,6 @@ include 'assets/include/dbconnect.php';
 // Handle CRUD operations
 $message = '';
 $message_type = '';
-$foreign_key_error = ''; // NEW: Variable to store foreign key error message
 
 // Add new city
 if (isset($_POST['add_city'])) {
@@ -52,7 +51,7 @@ if (isset($_POST['update_city'])) {
 if (isset($_GET['delete_id'])) {
     $city_id = $_GET['delete_id'];
 
-    // NEW: First check if city is being used in camp_sites table
+    // Check if the city is being used in camp_sites table
     $check_stmt = $conn->prepare("SELECT COUNT(*) as count FROM camp_sites WHERE city_id = ?");
     $check_stmt->bind_param("i", $city_id);
     $check_stmt->execute();
@@ -61,8 +60,9 @@ if (isset($_GET['delete_id'])) {
     $check_stmt->close();
 
     if ($check_row['count'] > 0) {
-        // City is being used, store error message
-        $foreign_key_error = "Cannot delete city because it is being used in " . $check_row['count'] . " camp site(s).";
+        // City is being used in camp_sites, cannot delete
+        $message = "Cannot delete city! This entry is being used in camp sites.";
+        $message_type = "error";
     } else {
         // City is not being used, proceed with deletion
         $stmt = $conn->prepare("DELETE FROM cities WHERE city_id = ?");
@@ -79,18 +79,17 @@ if (isset($_GET['delete_id'])) {
     }
 
     // Redirect to avoid resubmission
-    header("Location: cities_management.php");
+    header("Location: cities_management.php?message=" . urlencode($message) . "&type=" . $message_type);
     exit();
 }
 
 // Fetch all cities for the table
 $cities_result = $conn->query("SELECT * FROM cities ORDER BY city_id DESC");
 
-// NEW: Also fetch count of camp sites for each city
-$usage_counts = [];
-$usage_query = $conn->query("SELECT city_id, COUNT(*) as site_count FROM camp_sites GROUP BY city_id");
-while ($row = $usage_query->fetch_assoc()) {
-    $usage_counts[$row['city_id']] = $row['site_count'];
+// Check for messages from redirect
+if (isset($_GET['message']) && isset($_GET['type'])) {
+    $message = urldecode($_GET['message']);
+    $message_type = $_GET['type'];
 }
 ?>
 <!DOCTYPE html>
@@ -144,58 +143,42 @@ while ($row = $usage_query->fetch_assoc()) {
             background-color: #d4edda;
             border-color: #c3e6cb;
             color: #155724;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
         }
 
         .alert-error {
             background-color: #f8d7da;
             border-color: #f5c6cb;
             color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #dc3545;
         }
 
-        /* ... existing styles ... */
-
-        .alert-foreign-key {
+        .alert-warning {
             background-color: #fff3cd;
             border-color: #ffeaa7;
             color: #856404;
-            border-left: 4px solid #f39c12;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
         }
 
-        .alert-foreign-key i {
-            color: #e74c3c;
-            margin-right: 8px;
+        .alert i {
+            margin-right: 10px;
         }
 
-        .btn-delete-disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
+        .close {
+            color: #000;
+            opacity: 0.5;
         }
 
-        .delete-tooltip {
-            position: relative;
-            display: inline-block;
-        }
-
-        .delete-tooltip .tooltip-text {
-            visibility: hidden;
-            width: 200px;
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 5px;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            margin-left: -100px;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .delete-tooltip:hover .tooltip-text {
-            visibility: visible;
-            opacity: 1;
+        .close:hover {
+            opacity: 0.8;
         }
     </style>
 </head>
@@ -229,20 +212,16 @@ while ($row = $usage_query->fetch_assoc()) {
                         </button>
                     </div>
 
-                    <!-- NEW: Foreign Key Constraint Error Alert -->
-                    <?php if (!empty($foreign_key_error)): ?>
-                        <div class="alert alert-foreign-key alert-dismissible fade show" role="alert">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <strong>Foreign Key Constraint Error:</strong> <?php echo $foreign_key_error; ?>
-                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                    <?php endif; ?>
-
                     <!-- Message Alert -->
                     <?php if (!empty($message)): ?>
-                        <div class="alert <?php echo $message_type == 'success' ? 'alert-success' : 'alert-error'; ?> alert-dismissible fade show" role="alert">
+                        <div class="alert <?php echo $message_type == 'success' ? 'alert-success' : ($message_type == 'error' ? 'alert-error' : 'alert-warning'); ?> alert-dismissible fade show" role="alert">
+                            <?php if ($message_type == 'error'): ?>
+                                <i class="fas fa-times-circle"></i>
+                            <?php elseif ($message_type == 'success'): ?>
+                                <i class="fas fa-check-circle"></i>
+                            <?php else: ?>
+                                <i class="fas fa-exclamation-triangle"></i>
+                            <?php endif; ?>
                             <?php echo $message; ?>
                             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
@@ -268,10 +247,7 @@ while ($row = $usage_query->fetch_assoc()) {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php while ($city = $cities_result->fetch_assoc()):
-                                            $site_count = $usage_counts[$city['city_id']] ?? 0;
-                                            $can_delete = ($site_count == 0);
-                                        ?>
+                                        <?php while ($city = $cities_result->fetch_assoc()): ?>
                                             <tr>
                                                 <td><?php echo $city['city_id']; ?></td>
                                                 <td><?php echo htmlspecialchars($city['city_name']); ?></td>
@@ -288,28 +264,11 @@ while ($row = $usage_query->fetch_assoc()) {
                                                         data-status="<?php echo $city['status']; ?>">
                                                         <i class="fas fa-edit"></i> Edit
                                                     </button>
-                                                    <?php if ($can_delete): ?>
-                                                        <button class="btn btn-sm btn-danger delete-city"
-                                                            data-id="<?php echo $city['city_id']; ?>"
-                                                            data-name="<?php echo htmlspecialchars($city['city_name']); ?>">
-                                                            <i class="fas fa-trash"></i> Delete
-                                                        </button>
-                                                    <?php else: ?>
-                                                        <div class="delete-tooltip" title="Cannot delete - Used in <?php echo $site_count; ?> camp site(s)">
-                                                            <button class="btn btn-sm btn-danger btn-delete-disabled" disabled>
-                                                                <i class="fas fa-trash"></i> Delete
-                                                            </button>
-                                                            <span class="tooltip-text">
-                                                                <i class="fas fa-exclamation-circle"></i>
-                                                                This city is being used in <?php echo $site_count; ?> camp site(s)
-                                                            </span>
-                                                        </div>
-                                                    <?php endif; ?>
-                                                    <?php if ($site_count > 0): ?>
-                                                        <span class="badge badge-info ml-2" title="Used in <?php echo $site_count; ?> camp site(s)">
-                                                            <i class="fas fa-link"></i> <?php echo $site_count; ?> site(s)
-                                                        </span>
-                                                    <?php endif; ?>
+                                                    <button class="btn btn-sm btn-danger delete-city"
+                                                        data-id="<?php echo $city['city_id']; ?>"
+                                                        data-name="<?php echo htmlspecialchars($city['city_name']); ?>">
+                                                        <i class="fas fa-trash"></i> Delete
+                                                    </button>
                                                 </td>
                                             </tr>
                                         <?php endwhile; ?>
@@ -492,8 +451,8 @@ while ($row = $usage_query->fetch_assoc()) {
                 $('#editCityModal').modal('show');
             });
 
-            // Delete city button click - only for enabled buttons
-            $(document).on('click', '.delete-city:not(:disabled)', function() {
+            // Delete city button click
+            $('.delete-city').click(function() {
                 var cityId = $(this).data('id');
                 var cityName = $(this).data('name');
 
@@ -507,9 +466,6 @@ while ($row = $usage_query->fetch_assoc()) {
             setTimeout(function() {
                 $('.alert').alert('close');
             }, 5000);
-
-            // NEW: Initialize Bootstrap tooltips for disabled delete buttons
-            $('[title]').tooltip();
         });
     </script>
 
