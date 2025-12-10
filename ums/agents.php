@@ -163,6 +163,7 @@ $active_rate = $total_agents > 0 ? round(($active_agents / $total_agents) * 100,
 
         .action-buttons .btn {
             margin-right: 5px;
+            margin-bottom: 5px;
         }
 
         .alert-success {
@@ -207,6 +208,7 @@ $active_rate = $total_agents > 0 ? round(($active_agents / $total_agents) * 100,
             background-color: #e8f4fd;
             color: #2c5aa0;
             border: 1px solid #2c5aa0;
+            white-space: nowrap;
         }
 
         .stats-card {
@@ -228,6 +230,215 @@ $active_rate = $total_agents > 0 ? round(($active_agents / $total_agents) * 100,
 
         .close:hover {
             opacity: 0.8;
+        }
+        
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+            .d-sm-flex {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+            }
+            
+            .d-sm-flex .btn {
+                margin-top: 10px;
+                align-self: flex-start;
+            }
+            
+            .modal-dialog {
+                margin: 10px;
+            }
+            
+            .action-buttons {
+                min-width: 150px;
+            }
+            
+            .action-buttons .btn {
+                display: block;
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 5px;
+            }
+            
+            .table-responsive {
+                border: none;
+            }
+            
+            #agentsTable_wrapper .row:first-child {
+                flex-direction: column;
+            }
+            
+            #agentsTable_wrapper .col-sm-12 {
+                margin-bottom: 10px;
+            }
+            
+            #agentsTable_wrapper .dataTables_filter {
+                text-align: left !important;
+            }
+            
+            #agentsTable_wrapper .dataTables_length,
+            #agentsTable_wrapper .dataTables_filter {
+                padding: 0;
+            }
+            
+            .agent-icon {
+                font-size: 1em;
+                margin-right: 5px;
+            }
+            
+            .device-badge {
+                font-size: 0.75em;
+                padding: 3px 6px;
+            }
+            
+            .stats-card .h5 {
+                font-size: 1.25rem;
+            }
+            
+            .stats-card .text-xs {
+                font-size: 0.7rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .container-fluid {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+            
+            .card-body {
+                padding: 15px;
+            }
+            
+            .h3 {
+                font-size: 1.5rem;
+            }
+            
+            .modal-content {
+                margin: 0 10px;
+            }
+            
+            .btn-sm {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.875rem;
+            }
+            
+            .action-buttons .btn i {
+                margin-right: 5px;
+            }
+            
+            td, th {
+                padding: 0.5rem !important;
+                font-size: 0.9rem;
+            }
+            
+            .device-badge {
+                font-size: 0.7em;
+                padding: 2px 4px;
+            }
+            
+            .row.mb-4 {
+                margin-bottom: 1rem !important;
+            }
+            
+            .col-xl-3, .col-md-6 {
+                margin-bottom: 0.5rem;
+            }
+            
+            .stats-card .card-body {
+                padding: 1rem;
+            }
+        }
+        
+        @media (max-width: 360px) {
+            .h3 {
+                font-size: 1.3rem;
+            }
+            
+            .btn {
+                font-size: 0.85rem;
+                padding: 0.375rem 0.75rem;
+            }
+            
+            .modal-header h5 {
+                font-size: 1.1rem;
+            }
+            
+            .form-group label {
+                font-size: 0.9rem;
+            }
+            
+            .modal-body .form-group {
+                margin-bottom: 1rem;
+            }
+            
+            .modal-body .form-control {
+                padding: 0.375rem 0.75rem;
+                font-size: 0.9rem;
+            }
+            
+            .modal-body .form-text {
+                font-size: 0.8rem;
+            }
+            
+            .stats-card .h5 {
+                font-size: 1.1rem;
+            }
+        }
+        
+        /* Column priority for mobile */
+        @media (max-width: 768px) {
+            .agent-name-col {
+                min-width: 120px;
+                word-break: break-word;
+            }
+            
+            .device-col {
+                min-width: 100px;
+                word-break: break-word;
+            }
+            
+            .status-col {
+                min-width: 70px;
+            }
+            
+            /* Compact stats cards for mobile */
+            .stats-card .col-auto {
+                display: none;
+            }
+            
+            .stats-card .col.mr-2 {
+                width: 100%;
+                text-align: center;
+            }
+        }
+        
+        /* Show stats cards on mobile but make them smaller */
+        .row.mb-4.d-none {
+            display: flex !important;
+        }
+        
+        @media (max-width: 768px) {
+            .row.mb-4 {
+                margin-left: -5px;
+                margin-right: -5px;
+            }
+            
+            .col-xl-3.col-md-6.mb-4 {
+                padding-left: 5px;
+                padding-right: 5px;
+            }
+            
+            .stats-card {
+                margin-bottom: 10px !important;
+            }
+            
+            .stats-card .card-body {
+                padding: 0.75rem;
+            }
+            
+            .stats-card .fa-2x {
+                font-size: 1.5em;
+            }
         }
     </style>
 </head>
@@ -251,12 +462,12 @@ $active_rate = $total_agents > 0 ? round(($active_agents / $total_agents) * 100,
                 <!-- End of Topbar -->
 
                 <!-- Begin Page Content -->
-                <div class="container-fluid">
+                <div class="container-fluid px-md-4 px-sm-3 px-2">
 
                     <!-- Page Heading -->
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <h1 class="h3 mb-0 text-gray-800">Agents Management</h1>
-                        <button class="d-sm-inline-block btn btn-sm btn-primary shadow-sm" data-toggle="modal" data-target="#addAgentModal">
+                        <button class="d-sm-inline-block btn btn-sm btn-primary shadow-sm mt-sm-0 mt-2" data-toggle="modal" data-target="#addAgentModal">
                             <i class="fas fa-plus fa-sm text-white-50"></i> Add New Agent
                         </button>
                     </div>
@@ -279,7 +490,7 @@ $active_rate = $total_agents > 0 ? round(($active_agents / $total_agents) * 100,
                     <?php endif; ?>
 
                     <!-- Quick Stats Cards -->
-                    <div class="row mb-4 d-none">
+                    <div class="row mb-4">
                         <!-- Total Agents Card -->
                         <div class="col-xl-3 col-md-6 mb-4">
                             <div class="card border-left-primary shadow h-100 py-2 stats-card">
@@ -366,16 +577,16 @@ $active_rate = $total_agents > 0 ? round(($active_agents / $total_agents) * 100,
                         <div class="card-header py-3">
                             <h6 class="m-0 font-weight-bold text-primary">All Agents</h6>
                         </div>
-                        <div class="card-body">
+                        <div class="card-body p-md-4 p-sm-3 p-2">
                             <div class="table-responsive">
-                                <table id="agentsTable" class="table table-bordered" width="100%" cellspacing="0">
+                                <table id="agentsTable" class="table table-bordered table-hover" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
                                             <th>ID</th>
-                                            <th>Agent Name</th>
-                                            <th>Assigned Device</th>
-                                            <th>Status</th>
-                                            <th class="d-none">Created By</th>
+                                            <th class="agent-name-col">Agent Name</th>
+                                            <th class="device-col">Device</th>
+                                            <th class="status-col">Status</th>
+                                            <th class="d-none d-md-table-cell">Created By</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -383,38 +594,40 @@ $active_rate = $total_agents > 0 ? round(($active_agents / $total_agents) * 100,
                                         <?php while ($agent = $agents_result->fetch_assoc()): ?>
                                             <tr>
                                                 <td><?php echo $agent['agent_id']; ?></td>
-                                                <td>
-                                                    <i class="fas fa-user-shield agent-icon"></i>
+                                                <td class="agent-name-col">
+                                                    <span class="d-md-none">
+                                                        <i class="fas fa-user-shield agent-icon"></i>
+                                                    </span>
                                                     <?php echo htmlspecialchars($agent['agent_name']); ?>
                                                 </td>
-                                                <td>
+                                                <td class="device-col">
                                                     <?php if ($agent['device_name']): ?>
                                                         <span class="device-badge">
-                                                            <i class="fas fa-microchip"></i>
+                                                            <span class="d-md-none"><i class="fas fa-microchip"></i></span>
                                                             <?php echo htmlspecialchars($agent['device_name']); ?>
                                                         </span>
                                                     <?php else: ?>
                                                         <span class="text-muted">Not Assigned</span>
                                                     <?php endif; ?>
                                                 </td>
-                                                <td>
+                                                <td class="status-col">
                                                     <span class="<?php echo $agent['status'] ? 'status-active' : 'status-inactive'; ?>">
                                                         <?php echo $agent['status'] ? 'Active' : 'Inactive'; ?>
                                                     </span>
                                                 </td>
-                                                <td class="d-none"><?php echo htmlspecialchars($agent['created_by']); ?></td>
+                                                <td class="d-none d-md-table-cell"><?php echo htmlspecialchars($agent['created_by']); ?></td>
                                                 <td class="action-buttons">
                                                     <button class="btn btn-sm btn-primary edit-agent"
                                                         data-id="<?php echo $agent['agent_id']; ?>"
                                                         data-name="<?php echo htmlspecialchars($agent['agent_name']); ?>"
                                                         data-device-id="<?php echo $agent['device_id']; ?>"
                                                         data-status="<?php echo $agent['status']; ?>">
-                                                        <i class="fas fa-edit"></i> Edit
+                                                        <i class="fas fa-edit"></i> <span class="d-none d-md-inline">Edit</span>
                                                     </button>
                                                     <button class="btn btn-sm btn-danger delete-agent"
                                                         data-id="<?php echo $agent['agent_id']; ?>"
                                                         data-name="<?php echo htmlspecialchars($agent['agent_name']); ?>">
-                                                        <i class="fas fa-trash"></i> Delete
+                                                        <i class="fas fa-trash"></i> <span class="d-none d-md-inline">Delete</span>
                                                     </button>
                                                 </td>
                                             </tr>
@@ -439,7 +652,7 @@ $active_rate = $total_agents > 0 ? round(($active_agents / $total_agents) * 100,
 
     <!-- Add Agent Modal -->
     <div class="modal fade" id="addAgentModal" tabindex="-1" role="dialog" aria-labelledby="addAgentModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
+        <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="addAgentModalLabel">Add New Agent</h5>
@@ -487,7 +700,7 @@ $active_rate = $total_agents > 0 ? round(($active_agents / $total_agents) * 100,
 
     <!-- Edit Agent Modal -->
     <div class="modal fade" id="editAgentModal" tabindex="-1" role="dialog" aria-labelledby="editAgentModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
+        <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="editAgentModalLabel">Edit Agent</h5>
@@ -534,7 +747,7 @@ $active_rate = $total_agents > 0 ? round(($active_agents / $total_agents) * 100,
 
     <!-- Delete Confirmation Modal -->
     <div class="modal fade" id="deleteAgentModal" tabindex="-1" role="dialog" aria-labelledby="deleteAgentModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
+        <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="deleteAgentModalLabel">Confirm Delete</h5>
@@ -577,7 +790,7 @@ $active_rate = $total_agents > 0 ? round(($active_agents / $total_agents) * 100,
 
     <script>
         $(document).ready(function() {
-            // Initialize DataTable
+            // Initialize DataTable with responsive settings
             $('#agentsTable').DataTable({
                 "pageLength": 10,
                 "lengthMenu": [
@@ -604,7 +817,9 @@ $active_rate = $total_agents > 0 ? round(($active_agents / $total_agents) * 100,
                         "next": "Next",
                         "previous": "Previous"
                     }
-                }
+                },
+                "responsive": true,
+                "autoWidth": false
             });
 
             // Edit agent button click
@@ -643,6 +858,11 @@ $active_rate = $total_agents > 0 ? round(($active_agents / $total_agents) * 100,
                 var cleanURL = window.location.origin + window.location.pathname;
                 window.history.replaceState({}, document.title, cleanURL);
             }
+            
+            // Handle window resize for better mobile experience
+            $(window).resize(function() {
+                $('#agentsTable').DataTable().columns.adjust();
+            });
         });
     </script>
 
