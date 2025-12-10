@@ -88,18 +88,26 @@ $summaries_result = $conn->query("
 
         .action-buttons .btn {
             margin-right: 5px;
+            margin-bottom: 5px;
         }
 
         .alert-success {
             background-color: #d4edda;
             border-color: #c3e6cb;
             color: #155724;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
         }
 
         .alert-error {
             background-color: #f8d7da;
             border-color: #f5c6cb;
             color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #dc3545;
         }
 
         .amount-badge {
@@ -107,6 +115,7 @@ $summaries_result = $conn->query("
             padding: 4px 8px;
             border-radius: 12px;
             font-weight: bold;
+            white-space: nowrap;
         }
 
         .amount-positive {
@@ -119,6 +128,7 @@ $summaries_result = $conn->query("
             font-size: 0.8em;
             padding: 3px 6px;
             border-radius: 8px;
+            white-space: nowrap;
         }
 
         .setup-fee-yes {
@@ -137,6 +147,191 @@ $summaries_result = $conn->query("
             font-size: 1.2em;
             margin-right: 8px;
             color: #4e73df;
+        }
+        
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+            .d-sm-flex {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+            }
+            
+            .d-sm-flex .btn {
+                margin-top: 10px;
+                align-self: flex-start;
+            }
+            
+            .modal-dialog {
+                margin: 10px;
+            }
+            
+            .action-buttons {
+                min-width: 150px;
+            }
+            
+            .action-buttons .btn {
+                display: block;
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 5px;
+            }
+            
+            .table-responsive {
+                border: none;
+            }
+            
+            #summariesTable_wrapper .row:first-child {
+                flex-direction: column;
+            }
+            
+            #summariesTable_wrapper .col-sm-12 {
+                margin-bottom: 10px;
+            }
+            
+            #summariesTable_wrapper .dataTables_filter {
+                text-align: left !important;
+            }
+            
+            #summariesTable_wrapper .dataTables_length,
+            #summariesTable_wrapper .dataTables_filter {
+                padding: 0;
+            }
+            
+            .amount-badge {
+                font-size: 0.8em;
+                padding: 3px 6px;
+            }
+            
+            .setup-fee-badge {
+                font-size: 0.75em;
+                padding: 2px 4px;
+            }
+            
+            .transaction-icon {
+                font-size: 1em;
+                margin-right: 5px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .container-fluid {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+            
+            .card-body {
+                padding: 15px;
+            }
+            
+            .h3 {
+                font-size: 1.5rem;
+            }
+            
+            .modal-content {
+                margin: 0 10px;
+            }
+            
+            .btn-sm {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.875rem;
+            }
+            
+            .action-buttons .btn i {
+                margin-right: 5px;
+            }
+            
+            td, th {
+                padding: 0.5rem !important;
+                font-size: 0.9rem;
+            }
+            
+            .amount-badge {
+                font-size: 0.75em;
+            }
+        }
+        
+        @media (max-width: 360px) {
+            .h3 {
+                font-size: 1.3rem;
+            }
+            
+            .btn {
+                font-size: 0.85rem;
+                padding: 0.375rem 0.75rem;
+            }
+            
+            .modal-header h5 {
+                font-size: 1.1rem;
+            }
+            
+            .modal-body p {
+                font-size: 0.9rem;
+            }
+            
+            .amount-badge {
+                font-size: 0.7em;
+                padding: 2px 4px;
+            }
+        }
+        
+        /* Column priority for mobile */
+        @media (max-width: 768px) {
+            .transaction-date-col {
+                min-width: 100px;
+            }
+            
+            .city-col {
+                min-width: 80px;
+                word-break: break-word;
+            }
+            
+            .camp-site-col {
+                min-width: 80px;
+                word-break: break-word;
+            }
+            
+            .setup-fee-col {
+                min-width: 70px;
+            }
+            
+            .fee-type-col {
+                min-width: 80px;
+                word-break: break-word;
+            }
+            
+            .transactions-col {
+                min-width: 70px;
+            }
+            
+            .amount-col {
+                min-width: 100px;
+            }
+            
+            .customer-col {
+                min-width: 100px;
+                word-break: break-word;
+            }
+            
+            .authority-col {
+                min-width: 100px;
+                word-break: break-word;
+            }
+            
+            .created-date-col {
+                min-width: 90px;
+            }
+        }
+        
+        /* Compact table styles for mobile */
+        @media (max-width: 768px) {
+            .compact-table {
+                font-size: 0.85rem;
+            }
+            
+            .compact-table .btn-sm {
+                padding: 0.2rem 0.4rem;
+                font-size: 0.8rem;
+            }
         }
     </style>
 </head>
@@ -160,12 +355,12 @@ $summaries_result = $conn->query("
                 <!-- End of Topbar -->
 
                 <!-- Begin Page Content -->
-                <div class="container-fluid">
+                <div class="container-fluid px-md-4 px-sm-3 px-2">
 
                     <!-- Page Heading -->
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <h1 class="h3 mb-0 text-gray-800">Cash Disbursement Summary</h1>
-                        <a href="add_cash_disbursement.php" class="d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+                        <a href="add_cash_disbursement.php" class="d-sm-inline-block btn btn-sm btn-primary shadow-sm mt-sm-0 mt-2">
                             <i class="fas fa-plus fa-sm text-white-50"></i> Add New Summary
                         </a>
                     </div>
@@ -173,6 +368,11 @@ $summaries_result = $conn->query("
                     <!-- Message Alert -->
                     <?php if (!empty($message)): ?>
                         <div class="alert <?php echo $message_type == 'success' ? 'alert-success' : 'alert-error'; ?> alert-dismissible fade show" role="alert">
+                            <?php if ($message_type == 'success'): ?>
+                                <i class="fas fa-check-circle"></i>
+                            <?php else: ?>
+                                <i class="fas fa-times-circle"></i>
+                            <?php endif; ?>
                             <?php echo $message; ?>
                             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
@@ -185,22 +385,22 @@ $summaries_result = $conn->query("
                         <div class="card-header py-3">
                             <h6 class="m-0 font-weight-bold text-primary">All Cash Disbursement Summaries</h6>
                         </div>
-                        <div class="card-body">
+                        <div class="card-body p-md-4 p-sm-3 p-2">
                             <div class="table-responsive">
-                                <table id="summariesTable" class="table table-bordered" width="100%" cellspacing="0">
+                                <table id="summariesTable" class="table table-bordered table-hover compact-table" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
                                             <th>ID</th>
-                                            <th>Transaction Date</th>
-                                            <th>City</th>
-                                            <th>Camp Site</th>
-                                            <th>Setup Fee</th>
-                                            <th>Fee Type</th>
-                                            <th>Transactions</th>
-                                            <th>Total Amount</th>
-                                            <th>Customer</th>
-                                            <th>Revenue Authority</th>
-                                            <th>Created Date</th>
+                                            <th class="transaction-date-col">Date</th>
+                                            <th class="city-col d-none d-md-table-cell">City</th>
+                                            <th class="camp-site-col d-none d-md-table-cell">Camp Site</th>
+                                            <th class="setup-fee-col">Setup Fee</th>
+                                            <th class="fee-type-col d-none d-md-table-cell">Fee Type</th>
+                                            <th class="transactions-col">Trans</th>
+                                            <th class="amount-col">Amount</th>
+                                            <th class="customer-col d-none d-lg-table-cell">Customer</th>
+                                            <th class="authority-col d-none d-lg-table-cell">Authority</th>
+                                            <th class="created-date-col d-none d-md-table-cell">Created</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -208,39 +408,41 @@ $summaries_result = $conn->query("
                                         <?php while ($summary = $summaries_result->fetch_assoc()): ?>
                                             <tr>
                                                 <td><?php echo $summary['summary_id']; ?></td>
-                                                <td>
-                                                    <i class="fas fa-calendar transaction-icon"></i>
+                                                <td class="transaction-date-col">
+                                                    <span class="d-md-none">
+                                                        <i class="fas fa-calendar transaction-icon"></i>
+                                                    </span>
                                                     <?php echo date('M j, Y', strtotime($summary['transaction_date'])); ?>
                                                 </td>
-                                                <td><?php echo htmlspecialchars($summary['city_name'] ?? 'N/A'); ?></td>
-                                                <td><?php echo htmlspecialchars($summary['camp_site_name'] ?? 'N/A'); ?></td>
-                                                <td>
+                                                <td class="city-col d-none d-md-table-cell"><?php echo htmlspecialchars($summary['city_name'] ?? 'N/A'); ?></td>
+                                                <td class="camp-site-col d-none d-md-table-cell"><?php echo htmlspecialchars($summary['camp_site_name'] ?? 'N/A'); ?></td>
+                                                <td class="setup-fee-col">
                                                     <span class="setup-fee-badge <?php echo $summary['setup_fee_applied'] == 'Yes' ? 'setup-fee-yes' : 'setup-fee-no'; ?>">
-                                                        <?php echo htmlspecialchars($summary['setup_fee_applied']); ?>
+                                                        <?php echo $summary['setup_fee_applied'] == 'Yes' ? 'Yes' : 'No'; ?>
                                                     </span>
                                                 </td>
-                                                <td><?php echo htmlspecialchars($summary['setup_fee_type']); ?></td>
-                                                <td>
+                                                <td class="fee-type-col d-none d-md-table-cell"><?php echo htmlspecialchars($summary['setup_fee_type']); ?></td>
+                                                <td class="transactions-col">
                                                     <span class="amount-badge">
                                                         <?php echo number_format($summary['total_transactions']); ?>
                                                     </span>
                                                 </td>
-                                                <td>
+                                                <td class="amount-col">
                                                     <span class="amount-badge amount-positive">
                                                         PKR <?php echo number_format($summary['total_amount']); ?>
                                                     </span>
                                                 </td>
-                                                <td><?php echo htmlspecialchars($summary['customer_name']); ?></td>
-                                                <td><?php echo htmlspecialchars($summary['authority_name']); ?></td>
-                                                <td><?php echo date('M j, Y', strtotime($summary['created_date'])); ?></td>
+                                                <td class="customer-col d-none d-lg-table-cell"><?php echo htmlspecialchars($summary['customer_name']); ?></td>
+                                                <td class="authority-col d-none d-lg-table-cell"><?php echo htmlspecialchars($summary['authority_name']); ?></td>
+                                                <td class="created-date-col d-none d-md-table-cell"><?php echo date('M j, Y', strtotime($summary['created_date'])); ?></td>
                                                 <td class="action-buttons">
                                                     <a href="edit_cash_disbursement.php?id=<?php echo $summary['summary_id']; ?>" class="btn btn-sm btn-primary">
-                                                        <i class="fas fa-edit"></i> Edit
+                                                        <i class="fas fa-edit"></i> <span class="d-none d-md-inline">Edit</span>
                                                     </a>
                                                     <button class="btn btn-sm btn-danger delete-summary"
                                                         data-id="<?php echo $summary['summary_id']; ?>"
                                                         data-date="<?php echo date('M j, Y', strtotime($summary['transaction_date'])); ?>">
-                                                        <i class="fas fa-trash"></i> Delete
+                                                        <i class="fas fa-trash"></i> <span class="d-none d-md-inline">Delete</span>
                                                     </button>
                                                 </td>
                                             </tr>
@@ -265,7 +467,7 @@ $summaries_result = $conn->query("
 
     <!-- Delete Confirmation Modal -->
     <div class="modal fade" id="deleteSummaryModal" tabindex="-1" role="dialog" aria-labelledby="deleteSummaryModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
+        <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="deleteSummaryModalLabel">Confirm Delete</h5>
@@ -308,7 +510,7 @@ $summaries_result = $conn->query("
 
     <script>
         $(document).ready(function() {
-            // Initialize DataTable
+            // Initialize DataTable with responsive settings
             $('#summariesTable').DataTable({
                 "pageLength": 10,
                 "lengthMenu": [
@@ -335,7 +537,9 @@ $summaries_result = $conn->query("
                         "next": "Next",
                         "previous": "Previous"
                     }
-                }
+                },
+                "responsive": true,
+                "autoWidth": false
             });
 
             // Delete summary button click
@@ -353,6 +557,11 @@ $summaries_result = $conn->query("
             setTimeout(function() {
                 $('.alert').alert('close');
             }, 5000);
+            
+            // Handle window resize for better mobile experience
+            $(window).resize(function() {
+                $('#summariesTable').DataTable().columns.adjust();
+            });
         });
     </script>
 
