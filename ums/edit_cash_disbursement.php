@@ -28,7 +28,7 @@ $stmt->bind_param("i", $summary_id);
 if ($stmt->execute()) {
     $summary_result = $stmt->get_result();
     $summary_data = $summary_result->fetch_assoc();
-    
+
     if (!$summary_data) {
         $_SESSION['message'] = "Cash disbursement summary not found!";
         $_SESSION['message_type'] = "error";
@@ -67,7 +67,7 @@ if (isset($_POST['update_summary'])) {
         updated_date = NOW(),
         updated_by = ?
         WHERE summary_id = ?");
-    
+
     $stmt->bind_param("siissiiisi", $transaction_date, $city_id, $camp_site_id, $setup_fee_applied, $setup_fee_type, $customer_id, $authority_id, $updated_by, $summary_id);
 
     if ($stmt->execute()) {
@@ -79,7 +79,7 @@ if (isset($_POST['update_summary'])) {
         $summary_data['setup_fee_type'] = $setup_fee_type;
         $summary_data['customer_id'] = $customer_id;
         $summary_data['authority_id'] = $authority_id;
-        
+
         $_SESSION['message'] = "Cash disbursement summary updated successfully!";
         $_SESSION['message_type'] = "success";
         header("Location: edit_cash_disbursement.php?id=" . $summary_id . "&tab=summary");
@@ -120,7 +120,7 @@ if (isset($_POST['add_detail'])) {
         // Update local summary totals
         $summary_data['total_transactions'] += $num_transactions;
         $summary_data['total_amount'] += $total_trans_amount;
-        
+
         $_SESSION['message'] = "Transaction detail added successfully!";
         $_SESSION['message_type'] = "success";
         header("Location: edit_cash_disbursement.php?id=" . $summary_id . "&tab=details");
@@ -135,7 +135,7 @@ if (isset($_POST['add_detail'])) {
 // Update detail entry
 if (isset($_POST['update_detail'])) {
     $detail_id = $_POST['detail_id'] ?? 0;
-    
+
     if ($detail_id > 0) {
         // Get old detail values first
         $stmt = $conn->prepare("SELECT num_transactions, total_trans_amount FROM cash_disbursement_details WHERE detail_id = ? AND summary_id = ?");
@@ -167,14 +167,14 @@ if (isset($_POST['update_detail'])) {
             updated_by = ?,
             updated_date = NOW()
             WHERE detail_id = ? AND summary_id = ?");
-        
+
         $stmt->bind_param("iissdissiii", $device_id, $agent_id, $person_name, $cit_shipment_ref, $num_transactions, $total_trans_amount, $detail_transaction_date, $updated_by, $detail_id, $summary_id);
 
         if ($stmt->execute()) {
             // Update summary totals with difference
             $trans_diff = $num_transactions - $old_num_trans;
             $amount_diff = $total_trans_amount - $old_amount;
-            
+
             $update_stmt = $conn->prepare("UPDATE cash_disbursement_summary SET 
                 total_transactions = total_transactions + ?,
                 total_amount = total_amount + ?
@@ -186,7 +186,7 @@ if (isset($_POST['update_detail'])) {
             // Update local summary totals
             $summary_data['total_transactions'] += $trans_diff;
             $summary_data['total_amount'] += $amount_diff;
-            
+
             $_SESSION['message'] = "Transaction detail updated successfully!";
             $_SESSION['message_type'] = "success";
             header("Location: edit_cash_disbursement.php?id=" . $summary_id . "&tab=details");
@@ -229,7 +229,7 @@ if (isset($_GET['delete_detail'])) {
             // Update local summary totals
             $summary_data['total_transactions'] -= $num_trans;
             $summary_data['total_amount'] -= $amount;
-            
+
             $_SESSION['message'] = "Transaction detail deleted successfully!";
             $_SESSION['message_type'] = "success";
         }
@@ -531,8 +531,8 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'summary';
                             <a class="nav-link <?php echo $active_tab == 'details' ? 'active' : ''; ?>" id="details-tab" data-toggle="tab" href="#details" role="tab" aria-controls="details" aria-selected="<?php echo $active_tab == 'details' ? 'true' : 'false'; ?>">
                                 <i class="fas fa-list"></i> Manage Details
                                 <span class="badge badge-primary"><?php echo count($details_data); ?></span>
-                                <span class="tab-complete-indicator <?php echo count($details_data) > 0 ? 'complete' : 'incomplete'; ?>" 
-                                      title="<?php echo count($details_data) > 0 ? 'Details exist' : 'No details yet'; ?>"></span>
+                                <span class="tab-complete-indicator <?php echo count($details_data) > 0 ? 'complete' : 'incomplete'; ?>"
+                                    title="<?php echo count($details_data) > 0 ? 'Details exist' : 'No details yet'; ?>"></span>
                             </a>
                         </li>
                         <li class="nav-item">
@@ -555,7 +555,7 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'summary';
                                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
                                     <h6 class="m-0 font-weight-bold text-primary">Edit Summary Information</h6>
                                     <span class="text-primary">
-                                        <i class="fas fa-info-circle"></i> Total: <?php echo $summary_data['total_transactions']; ?> transactions, 
+                                        <i class="fas fa-info-circle"></i> Total: <?php echo $summary_data['total_transactions']; ?> transactions,
                                         PKR <?php echo number_format($summary_data['total_amount'], 2); ?>
                                     </span>
                                 </div>
@@ -720,13 +720,13 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'summary';
                                                 <?php if ($editing_detail): ?>
                                                     <input type="hidden" name="detail_id" value="<?php echo $editing_detail_id; ?>">
                                                 <?php endif; ?>
-                                                
+
                                                 <div class="form-group">
                                                     <label for="device_id">Device *</label>
                                                     <select class="form-control" id="device_id" name="device_id" required>
                                                         <option value="">Select Device</option>
                                                         <?php foreach ($devices as $device): ?>
-                                                            <option value="<?php echo $device['device_id']; ?>" 
+                                                            <option value="<?php echo $device['device_id']; ?>"
                                                                 <?php echo ($editing_detail && $device['device_id'] == $editing_detail['device_id']) ? 'selected' : ''; ?>>
                                                                 <?php echo htmlspecialchars($device['device_name']); ?>
                                                             </option>
@@ -749,35 +749,35 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'summary';
 
                                                 <div class="form-group">
                                                     <label for="person_name">Person Name</label>
-                                                    <input type="text" class="form-control" id="person_name" name="person_name" 
-                                                        value="<?php echo $editing_detail ? htmlspecialchars($editing_detail['person_name']) : ''; ?>" 
+                                                    <input type="text" class="form-control" id="person_name" name="person_name"
+                                                        value="<?php echo $editing_detail ? htmlspecialchars($editing_detail['person_name']) : ''; ?>"
                                                         placeholder="Enter person name">
                                                 </div>
 
                                                 <div class="form-group">
                                                     <label for="cit_shipment_ref">CIT/Shipment Reference</label>
-                                                    <input type="text" class="form-control" id="cit_shipment_ref" name="cit_shipment_ref" 
-                                                        value="<?php echo $editing_detail ? htmlspecialchars($editing_detail['cit_shipment_ref']) : ''; ?>" 
+                                                    <input type="text" class="form-control" id="cit_shipment_ref" name="cit_shipment_ref"
+                                                        value="<?php echo $editing_detail ? htmlspecialchars($editing_detail['cit_shipment_ref']) : ''; ?>"
                                                         placeholder="Enter reference">
                                                 </div>
 
                                                 <div class="form-group">
                                                     <label for="num_transactions">Number of Transactions *</label>
-                                                    <input type="number" class="form-control" id="num_transactions" name="num_transactions" 
-                                                        value="<?php echo $editing_detail ? $editing_detail['num_transactions'] : ''; ?>" 
+                                                    <input type="number" class="form-control" id="num_transactions" name="num_transactions"
+                                                        value="<?php echo $editing_detail ? $editing_detail['num_transactions'] : ''; ?>"
                                                         min="1" required>
                                                 </div>
 
                                                 <div class="form-group">
                                                     <label for="total_trans_amount">Total Amount (PKR) *</label>
-                                                    <input type="number" class="form-control" id="total_trans_amount" name="total_trans_amount" 
-                                                        value="<?php echo $editing_detail ? $editing_detail['total_trans_amount'] : ''; ?>" 
+                                                    <input type="number" class="form-control" id="total_trans_amount" name="total_trans_amount"
+                                                        value="<?php echo $editing_detail ? $editing_detail['total_trans_amount'] : ''; ?>"
                                                         min="0" step="0.01" required>
                                                 </div>
 
                                                 <div class="form-group">
                                                     <label for="detail_transaction_date">Transaction Date *</label>
-                                                    <input type="datetime-local" class="form-control" id="detail_transaction_date" name="detail_transaction_date" 
+                                                    <input type="datetime-local" class="form-control" id="detail_transaction_date" name="detail_transaction_date"
                                                         value="<?php echo $editing_detail ? date('Y-m-d\TH:i', strtotime($editing_detail['transaction_date'])) : date('Y-m-d\TH:i'); ?>" required>
                                                 </div>
 
@@ -793,7 +793,7 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'summary';
                                                         <i class="fas fa-plus"></i> Add New Detail
                                                     </button>
                                                 <?php endif; ?>
-                                                
+
                                                 <button type="button" class="btn btn-next-tab btn-block mt-2" onclick="goToStatistics()">
                                                     <i class="fas fa-chart-bar"></i> View Statistics
                                                     <i class="fas fa-arrow-right ml-2"></i>
