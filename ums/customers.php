@@ -155,6 +155,7 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
 
         .action-buttons .btn {
             margin-right: 5px;
+            margin-bottom: 5px;
         }
 
         .alert-success {
@@ -190,6 +191,7 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
             font-size: 0.8em;
             padding: 4px 8px;
             border-radius: 12px;
+            white-space: nowrap;
         }
 
         .revenue-auth-high {
@@ -228,6 +230,160 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
         .close:hover {
             opacity: 0.8;
         }
+        
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+            .d-sm-flex {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+            }
+            
+            .d-sm-flex .btn {
+                margin-top: 10px;
+                align-self: flex-start;
+            }
+            
+            .modal-dialog {
+                margin: 10px;
+            }
+            
+            .action-buttons {
+                min-width: 150px;
+            }
+            
+            .action-buttons .btn {
+                display: block;
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 5px;
+            }
+            
+            .table-responsive {
+                border: none;
+            }
+            
+            #customersTable_wrapper .row:first-child {
+                flex-direction: column;
+            }
+            
+            #customersTable_wrapper .col-sm-12 {
+                margin-bottom: 10px;
+            }
+            
+            #customersTable_wrapper .dataTables_filter {
+                text-align: left !important;
+            }
+            
+            #customersTable_wrapper .dataTables_length,
+            #customersTable_wrapper .dataTables_filter {
+                padding: 0;
+            }
+            
+            .revenue-auth-badge {
+                font-size: 0.75em;
+                padding: 3px 6px;
+            }
+            
+            /* Hide some columns on mobile for better readability */
+            .mobile-hide {
+                display: none !important;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .container-fluid {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+            
+            .card-body {
+                padding: 15px;
+            }
+            
+            .h3 {
+                font-size: 1.5rem;
+            }
+            
+            .modal-content {
+                margin: 0 10px;
+            }
+            
+            .btn-sm {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.875rem;
+            }
+            
+            .action-buttons .btn i {
+                margin-right: 5px;
+            }
+            
+            td, th {
+                padding: 0.5rem !important;
+                font-size: 0.9rem;
+            }
+            
+            .revenue-auth-badge {
+                font-size: 0.7em;
+                padding: 2px 4px;
+            }
+        }
+        
+        @media (max-width: 360px) {
+            .h3 {
+                font-size: 1.3rem;
+            }
+            
+            .btn {
+                font-size: 0.85rem;
+                padding: 0.375rem 0.75rem;
+            }
+            
+            .modal-header h5 {
+                font-size: 1.1rem;
+            }
+            
+            .form-group label {
+                font-size: 0.9rem;
+            }
+            
+            .modal-body .form-group {
+                margin-bottom: 1rem;
+            }
+            
+            .modal-body .form-control {
+                padding: 0.375rem 0.75rem;
+                font-size: 0.9rem;
+            }
+        }
+        
+        /* Column priority for mobile */
+        @media (max-width: 768px) {
+            .customer-code-col {
+                min-width: 80px;
+            }
+            
+            .customer-name-col {
+                min-width: 120px;
+            }
+            
+            .customer-contact-col {
+                min-width: 100px;
+                word-break: break-word;
+            }
+            
+            .customer-address-col {
+                min-width: 150px;
+                word-break: break-word;
+            }
+            
+            .revenue-auth-col {
+                min-width: 90px;
+            }
+            
+            .status-col {
+                min-width: 70px;
+            }
+        }
     </style>
 </head>
 
@@ -250,12 +406,12 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
                 <!-- End of Topbar -->
 
                 <!-- Begin Page Content -->
-                <div class="container-fluid">
+                <div class="container-fluid px-md-4 px-sm-3 px-2">
 
                     <!-- Page Heading -->
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <h1 class="h3 mb-0 text-gray-800">Customers Management</h1>
-                        <button class="d-sm-inline-block btn btn-sm btn-primary shadow-sm" data-toggle="modal" data-target="#addCustomerModal">
+                        <button class="d-sm-inline-block btn btn-sm btn-primary shadow-sm mt-sm-0 mt-2" data-toggle="modal" data-target="#addCustomerModal">
                             <i class="fas fa-plus fa-sm text-white-50"></i> Add New Customer
                         </button>
                     </div>
@@ -282,19 +438,19 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
                         <div class="card-header py-3">
                             <h6 class="m-0 font-weight-bold text-primary">All Customers</h6>
                         </div>
-                        <div class="card-body">
+                        <div class="card-body p-md-4 p-sm-3 p-2">
                             <div class="table-responsive">
-                                <table id="customersTable" class="table table-bordered" width="100%" cellspacing="0">
+                                <table id="customersTable" class="table table-bordered table-hover" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
                                             <th>ID</th>
-                                            <th>Customer Code</th>
-                                            <th>Customer Name</th>
-                                            <th>Customer Contact</th>
-                                            <th>Customer Address</th>
-                                            <th>Revenue Authorization</th>
-                                            <th>Status</th>
-                                            <th class="d-none">Created By</th>
+                                            <th class="customer-code-col">Customer Code</th>
+                                            <th class="customer-name-col">Customer Name</th>
+                                            <th class="customer-contact-col d-none d-md-table-cell">Customer Contact</th>
+                                            <th class="customer-address-col d-none d-md-table-cell">Customer Address</th>
+                                            <th class="revenue-auth-col">Revenue Auth</th>
+                                            <th class="status-col">Status</th>
+                                            <th class="d-none d-md-table-cell">Created By</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -320,21 +476,21 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
                                         ?>
                                             <tr>
                                                 <td><?php echo $customer['customer_id']; ?></td>
-                                                <td><?php echo htmlspecialchars($customer['customer_code']) ?></td>
-                                                <td><?php echo htmlspecialchars($customer['customer_name']); ?></td>
-                                                <td><?php echo $customer['contact'] ?></td>
-                                                <td><?php echo $customer['address']; ?></td>
-                                                <td>
+                                                <td class="customer-code-col"><?php echo htmlspecialchars($customer['customer_code']) ?></td>
+                                                <td class="customer-name-col"><?php echo htmlspecialchars($customer['customer_name']); ?></td>
+                                                <td class="customer-contact-col d-none d-md-table-cell"><?php echo htmlspecialchars($customer['contact']) ?></td>
+                                                <td class="customer-address-col d-none d-md-table-cell"><?php echo htmlspecialchars($customer['address']); ?></td>
+                                                <td class="revenue-auth-col">
                                                     <span class="revenue-auth-badge <?php echo $revenue_auth_class; ?>">
                                                         <?php echo htmlspecialchars($customer['revenue_auth']); ?>
                                                     </span>
                                                 </td>
-                                                <td>
+                                                <td class="status-col">
                                                     <span class="<?php echo $customer['status'] ? 'status-active' : 'status-inactive'; ?>">
                                                         <?php echo $customer['status'] ? 'Active' : 'Inactive'; ?>
                                                     </span>
                                                 </td>
-                                                <td class="d-none"><?php echo htmlspecialchars($customer['created_by']); ?></td>
+                                                <td class="d-none d-md-table-cell"><?php echo htmlspecialchars($customer['created_by']); ?></td>
                                                 <td class="action-buttons">
                                                     <button class="btn btn-sm btn-primary edit-customer"
                                                         data-id="<?php echo $customer['customer_id']; ?>"
@@ -344,12 +500,12 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
                                                         data-address="<?php echo htmlspecialchars($customer['address']); ?>"
                                                         data-revenue-auth="<?php echo htmlspecialchars($customer['revenue_auth']); ?>"
                                                         data-status="<?php echo $customer['status']; ?>">
-                                                        <i class="fas fa-edit"></i> Edit
+                                                        <i class="fas fa-edit"></i> <span class="d-none d-md-inline">Edit</span>
                                                     </button>
                                                     <button class="btn btn-sm btn-danger delete-customer"
                                                         data-id="<?php echo $customer['customer_id']; ?>"
                                                         data-name="<?php echo htmlspecialchars($customer['customer_name']); ?>">
-                                                        <i class="fas fa-trash"></i> Delete
+                                                        <i class="fas fa-trash"></i> <span class="d-none d-md-inline">Delete</span>
                                                     </button>
                                                 </td>
                                             </tr>
@@ -374,7 +530,7 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
 
     <!-- Add Customer Modal -->
     <div class="modal fade" id="addCustomerModal" tabindex="-1" role="dialog" aria-labelledby="addCustomerModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="addCustomerModalLabel">Add New Customer</h5>
@@ -384,38 +540,58 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
                 </div>
                 <form method="POST" action="customers.php">
                     <div class="modal-body">
-                        <div class="form-group">
-                            <label for="customer_name">Customer Code *</label>
-                            <input type="text" class="form-control" id="customer_code" name="customer_code" required>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="customer_code">Customer Code *</label>
+                                    <input type="text" class="form-control" id="customer_code" name="customer_code" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="customer_name">Customer Name *</label>
+                                    <input type="text" class="form-control" id="customer_name" name="customer_name" required>
+                                </div>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="customer_name">Customer Name *</label>
-                            <input type="text" class="form-control" id="customer_name" name="customer_name" required>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="customer_contact">Customer Contact</label>
+                                    <input type="text" class="form-control" id="customer_contact" name="customer_contact">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="revenue_auth">Revenue Authorization *</label>
+                                    <select class="form-control" id="revenue_auth" name="revenue_auth" required>
+                                        <option value="">Select Revenue Authorization</option>
+                                        <option value="Premium">Premium</option>
+                                        <option value="High">High</option>
+                                        <option value="Medium">Medium</option>
+                                        <option value="Low">Low</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="customer_name">Customer Contact</label>
-                            <input type="text" class="form-control" id="customer_contact" name="customer_contact">
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label for="customer_address">Customer Address</label>
+                                    <textarea class="form-control" id="customer_address" name="customer_address" rows="2"></textarea>
+                                </div>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="customer_name">Customer Address</label>
-                            <input type="text" class="form-control" id="customer_address" name="customer_address">
-                        </div>
-                        <div class="form-group">
-                            <label for="revenue_auth">Revenue Authorization *</label>
-                            <select class="form-control" id="revenue_auth" name="revenue_auth" required>
-                                <option value="">Select Revenue Authorization</option>
-                                <option value="Premium">Premium</option>
-                                <option value="High">High</option>
-                                <option value="Medium">Medium</option>
-                                <option value="Low">Low</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="status" name="status" checked>
-                                <label class="form-check-label" for="status">
-                                    Active
-                                </label>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="status" name="status" checked>
+                                        <label class="form-check-label" for="status">
+                                            Active
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -430,7 +606,7 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
 
     <!-- Edit Customer Modal -->
     <div class="modal fade" id="editCustomerModal" tabindex="-1" role="dialog" aria-labelledby="editCustomerModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="editCustomerModalLabel">Edit Customer</h5>
@@ -441,38 +617,58 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
                 <form method="POST" action="customers.php">
                     <div class="modal-body">
                         <input type="hidden" id="edit_customer_id" name="customer_id">
-                        <div class="form-group">
-                            <label for="edit_customer_code">Customer Code *</label>
-                            <input type="text" class="form-control" id="edit_customer_code" name="customer_code" required>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="edit_customer_code">Customer Code *</label>
+                                    <input type="text" class="form-control" id="edit_customer_code" name="customer_code" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="edit_customer_name">Customer Name *</label>
+                                    <input type="text" class="form-control" id="edit_customer_name" name="customer_name" required>
+                                </div>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="edit_customer_name">Customer Name *</label>
-                            <input type="text" class="form-control" id="edit_customer_name" name="customer_name" required>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="edit_customer_contact">Customer Contact</label>
+                                    <input type="text" class="form-control" id="edit_customer_contact" name="customer_contact">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="edit_revenue_auth">Revenue Authorization *</label>
+                                    <select class="form-control" id="edit_revenue_auth" name="revenue_auth" required>
+                                        <option value="">Select Revenue Authorization</option>
+                                        <option value="Premium">Premium</option>
+                                        <option value="High">High</option>
+                                        <option value="Medium">Medium</option>
+                                        <option value="Low">Low</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="edit_customer_contact">Customer Contact</label>
-                            <input type="text" class="form-control" id="edit_customer_contact" name="customer_contact">
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label for="edit_customer_address">Customer Address</label>
+                                    <textarea class="form-control" id="edit_customer_address" name="customer_address" rows="2"></textarea>
+                                </div>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="edit_customer_address">Customer Address</label>
-                            <input type="text" class="form-control" id="edit_customer_address" name="customer_address">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit_revenue_auth">Revenue Authorization *</label>
-                            <select class="form-control" id="edit_revenue_auth" name="revenue_auth" required>
-                                <option value="">Select Revenue Authorization</option>
-                                <option value="Premium">Premium</option>
-                                <option value="High">High</option>
-                                <option value="Medium">Medium</option>
-                                <option value="Low">Low</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="edit_status" name="status">
-                                <label class="form-check-label" for="edit_status">
-                                    Active
-                                </label>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="edit_status" name="status">
+                                        <label class="form-check-label" for="edit_status">
+                                            Active
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -487,7 +683,7 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
 
     <!-- Delete Confirmation Modal -->
     <div class="modal fade" id="deleteCustomerModal" tabindex="-1" role="dialog" aria-labelledby="deleteCustomerModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
+        <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="deleteCustomerModalLabel">Confirm Delete</h5>
@@ -530,7 +726,7 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
 
     <script>
         $(document).ready(function() {
-            // Initialize DataTable
+            // Initialize DataTable with responsive settings
             $('#customersTable').DataTable({
                 "pageLength": 10,
                 "lengthMenu": [
@@ -557,7 +753,9 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
                         "next": "Next",
                         "previous": "Previous"
                     }
-                }
+                },
+                "responsive": true,
+                "autoWidth": false
             });
 
             // Edit customer button click
@@ -602,6 +800,11 @@ if (isset($_GET['message']) && isset($_GET['type'])) {
                 var cleanURL = window.location.origin + window.location.pathname;
                 window.history.replaceState({}, document.title, cleanURL);
             }
+            
+            // Handle window resize for better mobile experience
+            $(window).resize(function() {
+                $('#customersTable').DataTable().columns.adjust();
+            });
         });
     </script>
 
