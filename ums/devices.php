@@ -16,11 +16,11 @@ if (isset($_POST['add_device'])) {
     $stmt->bind_param("sis", $device_name, $status, $created_by);
 
     if ($stmt->execute()) {
-        $message = "Device added successfully!";
-        $message_type = "success";
+        $_SESSION['message'] = "Device added successfully!";
+        $_SESSION['message_type'] = "success";
     } else {
-        $message = "Error adding device: " . $stmt->error;
-        $message_type = "error";
+        $_SESSION['message'] = "Error adding device: " . $stmt->error;
+        $_SESSION['message_type'] = "error";
     }
     $stmt->close();
     // Redirect to avoid resubmission
@@ -38,11 +38,11 @@ if (isset($_POST['update_device'])) {
     $stmt->bind_param("sii", $device_name, $status, $device_id);
 
     if ($stmt->execute()) {
-        $message = "Device updated successfully!";
-        $message_type = "success";
+        $_SESSION['message'] = "Device updated successfully!";
+        $_SESSION['message_type'] = "success";
     } else {
-        $message = "Error updating device: " . $stmt->error;
-        $message_type = "error";
+        $_SESSION['message'] = "Error updating device: " . $stmt->error;
+        $_SESSION['message_type'] = "error";
     }
     $stmt->close();
 }
@@ -51,25 +51,62 @@ if (isset($_POST['update_device'])) {
 if (isset($_GET['delete_id'])) {
     $device_id = $_GET['delete_id'];
 
-    $stmt = $conn->prepare("DELETE FROM devices WHERE device_id = ?");
-    $stmt->bind_param("i", $device_id);
+    // Check if the device is being used in agents table
+    $check_stmt = $conn->prepare("SELECT COUNT(*) as count FROM agents WHERE device_id = ?");
+    $check_stmt->bind_param("i", $device_id);
+    $check_stmt->execute();
+    $check_result = $check_stmt->get_result();
+    $check_row = $check_result->fetch_assoc();
+    $check_stmt->close();
 
-    if ($stmt->execute()) {
-        $message = "Device deleted successfully!";
-        $message_type = "success";
+    if ($check_row['count'] > 0) {
+        // Device is being used in agents, cannot delete
+        $_SESSION['message'] = "Cannot delete device! This entry is being used in agents.";
+        $_SESSION['message_type'] = "error";
     } else {
-        $message = "Error deleting device: " . $stmt->error;
-        $message_type = "error";
-    }
-    $stmt->close();
+        // Device is not being used, proceed with deletion
+        $stmt = $conn->prepare("DELETE FROM devices WHERE device_id = ?");
+        $stmt->bind_param("i", $device_id);
 
-    // Redirect to avoid resubmission
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "Device deleted successfully!";
+            $_SESSION['message_type'] = "success";
+        } else {
+            $_SESSION['message'] = "Error deleting device: " . $stmt->error;
+            $_SESSION['message_type'] = "error";
+        }
+        $stmt->close();
+    }
+
+    // Redirect to avoid resubmission and clear URL parameters
     header("Location: devices.php");
     exit();
 }
 
 // Fetch all devices for the table
 $devices_result = $conn->query("SELECT * FROM devices ORDER BY device_id DESC");
+
+// Check for session messages
+if (isset($_SESSION['message']) && isset($_SESSION['message_type'])) {
+    $message = $_SESSION['message'];
+    $message_type = $_SESSION['message_type'];
+
+    // Clear session messages after displaying
+    unset($_SESSION['message']);
+    unset($_SESSION['message_type']);
+}
+
+// Also check for URL messages (for backward compatibility)
+if (isset($_GET['message']) && isset($_GET['type'])) {
+    $message = urldecode($_GET['message']);
+    $message_type = $_GET['type'];
+}
+
+// Get stats for quick cards
+$total_devices = $conn->query("SELECT COUNT(*) as total FROM devices")->fetch_assoc()['total'];
+$active_devices = $conn->query("SELECT COUNT(*) as active FROM devices WHERE status = 1")->fetch_assoc()['active'];
+$inactive_devices = $conn->query("SELECT COUNT(*) as inactive FROM devices WHERE status = 0")->fetch_assoc()['inactive'];
+$active_rate = $total_devices > 0 ? round(($active_devices / $total_devices) * 100, 1) : 0;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -122,12 +159,29 @@ $devices_result = $conn->query("SELECT * FROM devices ORDER BY device_id DESC");
             background-color: #d4edda;
             border-color: #c3e6cb;
             color: #155724;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
         }
 
         .alert-error {
             background-color: #f8d7da;
             border-color: #f5c6cb;
             color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #dc3545;
+        }
+
+        .alert-warning {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
         }
 
         .device-icon {
@@ -141,6 +195,19 @@ $devices_result = $conn->query("SELECT * FROM devices ORDER BY device_id DESC");
 
         .device-card:hover {
             transform: translateY(-2px);
+        }
+
+        .alert i {
+            margin-right: 10px;
+        }
+
+        .close {
+            color: #000;
+            opacity: 0.5;
+        }
+
+        .close:hover {
+            opacity: 0.8;
         }
     </style>
 </head>
@@ -176,7 +243,14 @@ $devices_result = $conn->query("SELECT * FROM devices ORDER BY device_id DESC");
 
                     <!-- Message Alert -->
                     <?php if (!empty($message)): ?>
-                        <div class="alert <?php echo $message_type == 'success' ? 'alert-success' : 'alert-error'; ?> alert-dismissible fade show" role="alert">
+                        <div class="alert <?php echo $message_type == 'success' ? 'alert-success' : ($message_type == 'error' ? 'alert-error' : 'alert-warning'); ?> alert-dismissible fade show" role="alert">
+                            <?php if ($message_type == 'error'): ?>
+                                <i class="fas fa-times-circle"></i>
+                            <?php elseif ($message_type == 'success'): ?>
+                                <i class="fas fa-check-circle"></i>
+                            <?php else: ?>
+                                <i class="fas fa-exclamation-triangle"></i>
+                            <?php endif; ?>
                             <?php echo $message; ?>
                             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
@@ -195,10 +269,7 @@ $devices_result = $conn->query("SELECT * FROM devices ORDER BY device_id DESC");
                                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                                 Total Devices</div>
                                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                                <?php
-                                                $total_devices = $conn->query("SELECT COUNT(*) as total FROM devices")->fetch_assoc()['total'];
-                                                echo $total_devices;
-                                                ?>
+                                                <?php echo $total_devices; ?>
                                             </div>
                                         </div>
                                         <div class="col-auto">
@@ -218,10 +289,7 @@ $devices_result = $conn->query("SELECT * FROM devices ORDER BY device_id DESC");
                                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                                 Active Devices</div>
                                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                                <?php
-                                                $active_devices = $conn->query("SELECT COUNT(*) as active FROM devices WHERE status = 1")->fetch_assoc()['active'];
-                                                echo $active_devices;
-                                                ?>
+                                                <?php echo $active_devices; ?>
                                             </div>
                                         </div>
                                         <div class="col-auto">
@@ -241,10 +309,7 @@ $devices_result = $conn->query("SELECT * FROM devices ORDER BY device_id DESC");
                                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                                 Inactive Devices</div>
                                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                                <?php
-                                                $inactive_devices = $conn->query("SELECT COUNT(*) as inactive FROM devices WHERE status = 0")->fetch_assoc()['inactive'];
-                                                echo $inactive_devices;
-                                                ?>
+                                                <?php echo $inactive_devices; ?>
                                             </div>
                                         </div>
                                         <div class="col-auto">
@@ -264,10 +329,7 @@ $devices_result = $conn->query("SELECT * FROM devices ORDER BY device_id DESC");
                                             <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
                                                 Active Rate</div>
                                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                                <?php
-                                                $active_rate = $total_devices > 0 ? round(($active_devices / $total_devices) * 100, 1) : 0;
-                                                echo $active_rate . '%';
-                                                ?>
+                                                <?php echo $active_rate . '%'; ?>
                                             </div>
                                         </div>
                                         <div class="col-auto">
@@ -516,6 +578,12 @@ $devices_result = $conn->query("SELECT * FROM devices ORDER BY device_id DESC");
             setTimeout(function() {
                 $('.alert').alert('close');
             }, 5000);
+
+            // Clear URL parameters to prevent resubmission on reload
+            if (window.history.replaceState && (window.location.search.includes('delete_id') || window.location.search.includes('message'))) {
+                var cleanURL = window.location.origin + window.location.pathname;
+                window.history.replaceState({}, document.title, cleanURL);
+            }
         });
     </script>
 
