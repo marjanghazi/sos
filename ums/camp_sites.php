@@ -18,11 +18,11 @@ if (isset($_POST['add_camp_site'])) {
     $stmt->bind_param("issis", $city_id, $camp_site_name, $setup_type, $status, $created_by);
 
     if ($stmt->execute()) {
-        $message = "Camp site added successfully!";
-        $message_type = "success";
+        $_SESSION['message'] = "Camp site added successfully!";
+        $_SESSION['message_type'] = "success";
     } else {
-        $message = "Error adding camp site: " . $stmt->error;
-        $message_type = "error";
+        $_SESSION['message'] = "Error adding camp site: " . $stmt->error;
+        $_SESSION['message_type'] = "error";
     }
     $stmt->close();
     // Redirect to avoid resubmission
@@ -42,32 +42,47 @@ if (isset($_POST['update_camp_site'])) {
     $stmt->bind_param("issii", $city_id, $camp_site_name, $setup_type, $status, $camp_site_id);
 
     if ($stmt->execute()) {
-        $message = "Camp site updated successfully!";
-        $message_type = "success";
+        $_SESSION['message'] = "Camp site updated successfully!";
+        $_SESSION['message_type'] = "success";
     } else {
-        $message = "Error updating camp site: " . $stmt->error;
-        $message_type = "error";
+        $_SESSION['message'] = "Error updating camp site: " . $stmt->error;
+        $_SESSION['message_type'] = "error";
     }
     $stmt->close();
 }
 
-// Delete camp site
+// Delete camp site - store message in session to avoid URL parameters
 if (isset($_GET['delete_id'])) {
     $camp_site_id = $_GET['delete_id'];
 
-    $stmt = $conn->prepare("DELETE FROM camp_sites WHERE camp_site_id = ?");
-    $stmt->bind_param("i", $camp_site_id);
+    // Check if the camp site is being used in cash_disbursement_summary table
+    $check_stmt = $conn->prepare("SELECT COUNT(*) as count FROM cash_disbursement_summary WHERE camp_site_id = ?");
+    $check_stmt->bind_param("i", $camp_site_id);
+    $check_stmt->execute();
+    $check_result = $check_stmt->get_result();
+    $check_row = $check_result->fetch_assoc();
+    $check_stmt->close();
 
-    if ($stmt->execute()) {
-        $message = "Camp site deleted successfully!";
-        $message_type = "success";
+    if ($check_row['count'] > 0) {
+        // Camp site is being used in cash_disbursement_summary, cannot delete
+        $_SESSION['message'] = "Cannot delete camp site! This entry is being used in cash disbursement records.";
+        $_SESSION['message_type'] = "error";
     } else {
-        $message = "Error deleting camp site: " . $stmt->error;
-        $message_type = "error";
-    }
-    $stmt->close();
+        // Camp site is not being used, proceed with deletion
+        $stmt = $conn->prepare("DELETE FROM camp_sites WHERE camp_site_id = ?");
+        $stmt->bind_param("i", $camp_site_id);
 
-    // Redirect to avoid resubmission
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "Camp site deleted successfully!";
+            $_SESSION['message_type'] = "success";
+        } else {
+            $_SESSION['message'] = "Error deleting camp site: " . $stmt->error;
+            $_SESSION['message_type'] = "error";
+        }
+        $stmt->close();
+    }
+
+    // Redirect to avoid resubmission and clear URL parameters
     header("Location: camp_sites.php");
     exit();
 }
@@ -82,6 +97,22 @@ $camp_sites_result = $conn->query("
     LEFT JOIN cities c ON cs.city_id = c.city_id 
     ORDER BY cs.camp_site_id DESC
 ");
+
+// Check for session messages
+if (isset($_SESSION['message']) && isset($_SESSION['message_type'])) {
+    $message = $_SESSION['message'];
+    $message_type = $_SESSION['message_type'];
+
+    // Clear session messages after displaying
+    unset($_SESSION['message']);
+    unset($_SESSION['message_type']);
+}
+
+// Also check for URL messages (for backward compatibility)
+if (isset($_GET['message']) && isset($_GET['type'])) {
+    $message = urldecode($_GET['message']);
+    $message_type = $_GET['type'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -134,12 +165,29 @@ $camp_sites_result = $conn->query("
             background-color: #d4edda;
             border-color: #c3e6cb;
             color: #155724;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
         }
 
         .alert-error {
             background-color: #f8d7da;
             border-color: #f5c6cb;
             color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #dc3545;
+        }
+
+        .alert-warning {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
         }
 
         .setup-type-badge {
@@ -164,6 +212,19 @@ $camp_sites_result = $conn->query("
             background-color: #e3f2fd;
             color: #1565c0;
             border: 1px solid #1565c0;
+        }
+
+        .alert i {
+            margin-right: 10px;
+        }
+
+        .close {
+            color: #000;
+            opacity: 0.5;
+        }
+
+        .close:hover {
+            opacity: 0.8;
         }
     </style>
 </head>
@@ -199,7 +260,14 @@ $camp_sites_result = $conn->query("
 
                     <!-- Message Alert -->
                     <?php if (!empty($message)): ?>
-                        <div class="alert <?php echo $message_type == 'success' ? 'alert-success' : 'alert-error'; ?> alert-dismissible fade show" role="alert">
+                        <div class="alert <?php echo $message_type == 'success' ? 'alert-success' : ($message_type == 'error' ? 'alert-error' : 'alert-warning'); ?> alert-dismissible fade show" role="alert">
+                            <?php if ($message_type == 'error'): ?>
+                                <i class="fas fa-times-circle"></i>
+                            <?php elseif ($message_type == 'success'): ?>
+                                <i class="fas fa-check-circle"></i>
+                            <?php else: ?>
+                                <i class="fas fa-exclamation-triangle"></i>
+                            <?php endif; ?>
                             <?php echo $message; ?>
                             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
@@ -319,7 +387,10 @@ $camp_sites_result = $conn->query("
                             <label for="city_id">City *</label>
                             <select class="form-control" id="city_id" name="city_id" required>
                                 <option value="">Select City</option>
-                                <?php while ($city = $cities_result->fetch_assoc()): ?>
+                                <?php
+                                // Reset cities result pointer
+                                $cities_result->data_seek(0);
+                                while ($city = $cities_result->fetch_assoc()): ?>
                                     <option value="<?php echo $city['city_id']; ?>"><?php echo htmlspecialchars($city['city_name']); ?></option>
                                 <?php endwhile; ?>
                             </select>
@@ -383,8 +454,8 @@ $camp_sites_result = $conn->query("
                             <label for="edit_setup_type">Setup Type *</label>
                             <select class="form-control" id="edit_setup_type" name="setup_type" required>
                                 <option value="">Select Setup Type</option>
-                                <option value="1">full</option>
-                                <option value="2">light</option>
+                                <option value="1">Full</option>
+                                <option value="2">Light</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -512,6 +583,12 @@ $camp_sites_result = $conn->query("
             setTimeout(function() {
                 $('.alert').alert('close');
             }, 5000);
+
+            // Clear URL parameters to prevent resubmission on reload
+            if (window.history.replaceState && (window.location.search.includes('delete_id') || window.location.search.includes('message'))) {
+                var cleanURL = window.location.origin + window.location.pathname;
+                window.history.replaceState({}, document.title, cleanURL);
+            }
         });
     </script>
 
