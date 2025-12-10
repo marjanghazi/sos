@@ -5,6 +5,7 @@ include 'assets/include/dbconnect.php';
 // Handle CRUD operations
 $message = '';
 $message_type = '';
+$foreign_key_error = ''; // NEW: Variable to store foreign key error message
 
 // Add new city
 if (isset($_POST['add_city'])) {
@@ -51,17 +52,31 @@ if (isset($_POST['update_city'])) {
 if (isset($_GET['delete_id'])) {
     $city_id = $_GET['delete_id'];
 
-    $stmt = $conn->prepare("DELETE FROM cities WHERE city_id = ?");
-    $stmt->bind_param("i", $city_id);
+    // NEW: First check if city is being used in camp_sites table
+    $check_stmt = $conn->prepare("SELECT COUNT(*) as count FROM camp_sites WHERE city_id = ?");
+    $check_stmt->bind_param("i", $city_id);
+    $check_stmt->execute();
+    $check_result = $check_stmt->get_result();
+    $check_row = $check_result->fetch_assoc();
+    $check_stmt->close();
 
-    if ($stmt->execute()) {
-        $message = "City deleted successfully!";
-        $message_type = "success";
+    if ($check_row['count'] > 0) {
+        // City is being used, store error message
+        $foreign_key_error = "Cannot delete city because it is being used in " . $check_row['count'] . " camp site(s).";
     } else {
-        $message = "Error deleting city: " . $stmt->error;
-        $message_type = "error";
+        // City is not being used, proceed with deletion
+        $stmt = $conn->prepare("DELETE FROM cities WHERE city_id = ?");
+        $stmt->bind_param("i", $city_id);
+
+        if ($stmt->execute()) {
+            $message = "City deleted successfully!";
+            $message_type = "success";
+        } else {
+            $message = "Error deleting city: " . $stmt->error;
+            $message_type = "error";
+        }
+        $stmt->close();
     }
-    $stmt->close();
 
     // Redirect to avoid resubmission
     header("Location: cities_management.php");
@@ -70,6 +85,13 @@ if (isset($_GET['delete_id'])) {
 
 // Fetch all cities for the table
 $cities_result = $conn->query("SELECT * FROM cities ORDER BY city_id DESC");
+
+// NEW: Also fetch count of camp sites for each city
+$usage_counts = [];
+$usage_query = $conn->query("SELECT city_id, COUNT(*) as site_count FROM camp_sites GROUP BY city_id");
+while ($row = $usage_query->fetch_assoc()) {
+    $usage_counts[$row['city_id']] = $row['site_count'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -129,6 +151,52 @@ $cities_result = $conn->query("SELECT * FROM cities ORDER BY city_id DESC");
             border-color: #f5c6cb;
             color: #721c24;
         }
+
+        /* ... existing styles ... */
+
+        .alert-foreign-key {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+            border-left: 4px solid #f39c12;
+        }
+
+        .alert-foreign-key i {
+            color: #e74c3c;
+            margin-right: 8px;
+        }
+
+        .btn-delete-disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .delete-tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .delete-tooltip .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .delete-tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
     </style>
 </head>
 
@@ -161,6 +229,17 @@ $cities_result = $conn->query("SELECT * FROM cities ORDER BY city_id DESC");
                         </button>
                     </div>
 
+                    <!-- NEW: Foreign Key Constraint Error Alert -->
+                    <?php if (!empty($foreign_key_error)): ?>
+                        <div class="alert alert-foreign-key alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Foreign Key Constraint Error:</strong> <?php echo $foreign_key_error; ?>
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    <?php endif; ?>
+
                     <!-- Message Alert -->
                     <?php if (!empty($message)): ?>
                         <div class="alert <?php echo $message_type == 'success' ? 'alert-success' : 'alert-error'; ?> alert-dismissible fade show" role="alert">
@@ -189,7 +268,10 @@ $cities_result = $conn->query("SELECT * FROM cities ORDER BY city_id DESC");
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php while ($city = $cities_result->fetch_assoc()): ?>
+                                        <?php while ($city = $cities_result->fetch_assoc()):
+                                            $site_count = $usage_counts[$city['city_id']] ?? 0;
+                                            $can_delete = ($site_count == 0);
+                                        ?>
                                             <tr>
                                                 <td><?php echo $city['city_id']; ?></td>
                                                 <td><?php echo htmlspecialchars($city['city_name']); ?></td>
@@ -206,11 +288,28 @@ $cities_result = $conn->query("SELECT * FROM cities ORDER BY city_id DESC");
                                                         data-status="<?php echo $city['status']; ?>">
                                                         <i class="fas fa-edit"></i> Edit
                                                     </button>
-                                                    <button class="btn btn-sm btn-danger delete-city"
-                                                        data-id="<?php echo $city['city_id']; ?>"
-                                                        data-name="<?php echo htmlspecialchars($city['city_name']); ?>">
-                                                        <i class="fas fa-trash"></i> Delete
-                                                    </button>
+                                                    <?php if ($can_delete): ?>
+                                                        <button class="btn btn-sm btn-danger delete-city"
+                                                            data-id="<?php echo $city['city_id']; ?>"
+                                                            data-name="<?php echo htmlspecialchars($city['city_name']); ?>">
+                                                            <i class="fas fa-trash"></i> Delete
+                                                        </button>
+                                                    <?php else: ?>
+                                                        <div class="delete-tooltip" title="Cannot delete - Used in <?php echo $site_count; ?> camp site(s)">
+                                                            <button class="btn btn-sm btn-danger btn-delete-disabled" disabled>
+                                                                <i class="fas fa-trash"></i> Delete
+                                                            </button>
+                                                            <span class="tooltip-text">
+                                                                <i class="fas fa-exclamation-circle"></i>
+                                                                This city is being used in <?php echo $site_count; ?> camp site(s)
+                                                            </span>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                    <?php if ($site_count > 0): ?>
+                                                        <span class="badge badge-info ml-2" title="Used in <?php echo $site_count; ?> camp site(s)">
+                                                            <i class="fas fa-link"></i> <?php echo $site_count; ?> site(s)
+                                                        </span>
+                                                    <?php endif; ?>
                                                 </td>
                                             </tr>
                                         <?php endwhile; ?>
@@ -393,8 +492,8 @@ $cities_result = $conn->query("SELECT * FROM cities ORDER BY city_id DESC");
                 $('#editCityModal').modal('show');
             });
 
-            // Delete city button click
-            $('.delete-city').click(function() {
+            // Delete city button click - only for enabled buttons
+            $(document).on('click', '.delete-city:not(:disabled)', function() {
                 var cityId = $(this).data('id');
                 var cityName = $(this).data('name');
 
@@ -408,6 +507,9 @@ $cities_result = $conn->query("SELECT * FROM cities ORDER BY city_id DESC");
             setTimeout(function() {
                 $('.alert').alert('close');
             }, 5000);
+
+            // NEW: Initialize Bootstrap tooltips for disabled delete buttons
+            $('[title]').tooltip();
         });
     </script>
 
